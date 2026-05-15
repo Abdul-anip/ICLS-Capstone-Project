@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -111,7 +111,14 @@ function Login() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          Belum punya akun?{' '}
+          <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: '600' }}>
+            Daftar sebagai Siswa
+          </Link>
+        </p>
+
+        <p style={{ textAlign: 'center', marginTop: '8px', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
           Demo: gunakan <strong>siswa_hanif</strong> / <strong>dosen_budi</strong> dengan sandi <strong>123</strong>
         </p>
       </div>

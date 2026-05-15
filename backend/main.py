@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
-from routers import evaluasi, soal, auth
+from routers import evaluasi, soal, auth, instansi, users
 
 # Membuat tabel di database (jika belum ada)
 models.Base.metadata.create_all(bind=engine)
@@ -12,7 +12,7 @@ app = FastAPI(title="ICLS API", description="API untuk Intelligent Coding Learni
 # Konfigurasi CORS agar frontend React bisa mengakses API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Mengizinkan semua origin untuk tujuan development
+    allow_origins=["*"],  # Mengizinkan semua origin untuk tujuan development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,5 +23,7 @@ def read_root():
     return {"message": "Welcome to ICLS Backend API"}
 
 app.include_router(auth.router)
+app.include_router(instansi.router)
+app.include_router(users.router)
 app.include_router(evaluasi.router)
 app.include_router(soal.router)

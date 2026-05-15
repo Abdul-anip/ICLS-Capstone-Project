@@ -4,14 +4,31 @@ from database import Base
 import datetime
 import enum
 
+
 class RoleEnum(str, enum.Enum):
     siswa = "siswa"
     dosen = "dosen"
+    super_admin = "super_admin"
+
 
 class KesulitanEnum(str, enum.Enum):
     Mudah = "Mudah"
     Sedang = "Sedang"
     Sulit = "Sulit"
+
+
+class Instansi(Base):
+    __tablename__ = "tb_instansi"
+
+    instansi_id = Column(Integer, primary_key=True, index=True)
+    nama_instansi = Column(String(100), nullable=False)
+    kode_instansi = Column(String(20), unique=True, nullable=False, index=True)
+    alamat = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Relasi
+    users = relationship("User", back_populates="instansi")
+
 
 class User(Base):
     __tablename__ = "tb_user"
@@ -21,9 +38,11 @@ class User(Base):
     password_hash = Column(String(255))
     role = Column(Enum(RoleEnum))
     nama_lengkap = Column(String(100))
-    instansi_kelas = Column(String(50))
+    nama_kelas = Column(String(50), nullable=True)  # Nama kelas/rombel siswa
+    instansi_id = Column(Integer, ForeignKey("tb_instansi.instansi_id"), nullable=True)  # NULL untuk super_admin
 
     # Relasi
+    instansi = relationship("Instansi", back_populates="users")
     soal_dibuat = relationship("Soal", back_populates="pembuat")
     evaluasi = relationship("Evaluasi", back_populates="siswa")
     bkt_history = relationship("BKTHistory", back_populates="siswa")
@@ -78,7 +97,7 @@ class Evaluasi(Base):
     soal_id = Column(Integer, ForeignKey("tb_soal.soal_id"))
     source_code = Column(Text)
     status_compile = Column(String(50))
-    binary_result = Column(Integer) # 1 untuk benar, 0 untuk salah
+    binary_result = Column(Integer)  # 1 untuk benar, 0 untuk salah
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relasi

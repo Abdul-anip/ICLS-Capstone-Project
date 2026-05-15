@@ -4,7 +4,12 @@ import { useNavigate } from 'react-router-dom';
 function Navbar({ role }) {
   const navigate = useNavigate();
 
+  // Ambil data user dari localStorage
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
+
   const handleLogout = () => {
+    localStorage.removeItem('user');  // Hapus sesi user
     navigate('/login');
   };
 
@@ -59,10 +64,10 @@ function Navbar({ role }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>
-            {role === 'dosen' ? 'Instruktur Utama' : 'Ahmad Hanif'}
+            {user?.nama_lengkap || (role === 'dosen' ? 'Instruktur' : 'Siswa')}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-            {role === 'dosen' ? 'Mode Dosen' : 'Mode Siswa'}
+            {user?.nama_instansi || (role === 'dosen' ? 'Mode Dosen' : 'Mode Siswa')}
           </div>
         </div>
         <button className="btn btn-secondary" onClick={handleLogout} style={{ padding: '6px 16px', fontSize: '0.85rem' }}>
