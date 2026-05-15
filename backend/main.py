@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
-from routers import evaluasi, soal
+from routers import evaluasi, soal, auth
 
 # Membuat tabel di database (jika belum ada)
 models.Base.metadata.create_all(bind=engine)
@@ -22,5 +22,6 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to ICLS Backend API"}
 
+app.include_router(auth.router)
 app.include_router(evaluasi.router)
 app.include_router(soal.router)

@@ -2,6 +2,25 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
+# --- Skema Autentikasi ---
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserLoginResponse(BaseModel):
+    user_id: int
+    username: str
+    nama_lengkap: str
+    role: str
+    instansi_kelas: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
+# --- Skema Soal ---
+
 class SoalBase(BaseModel):
     deskripsi_soal: str
     tingkat_kesulitan: str
