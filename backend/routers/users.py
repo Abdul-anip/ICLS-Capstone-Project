@@ -103,12 +103,25 @@ def get_all_siswa(requestor_id: int, db: Session = Depends(get_db)):
     if not requestor or requestor.role not in [models.RoleEnum.dosen, models.RoleEnum.super_admin]:
         raise HTTPException(status_code=403, detail="Akses ditolak.")
 
-    # Filter siswa hanya dari instansi yang sama
     siswa_list = db.query(models.User).filter(
         models.User.instansi_id == requestor.instansi_id,
         models.User.role == models.RoleEnum.siswa
     ).all()
     return siswa_list
+
+
+@router.get("/dosen-list", response_model=list[schemas.UserListResponse])
+def get_all_dosen(requestor_id: int, db: Session = Depends(get_db)):
+    """Dosen melihat daftar semua dosen di instansinya sendiri."""
+    requestor = db.query(models.User).filter(models.User.user_id == requestor_id).first()
+    if not requestor or requestor.role not in [models.RoleEnum.dosen, models.RoleEnum.super_admin]:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+
+    dosen_list = db.query(models.User).filter(
+        models.User.instansi_id == requestor.instansi_id,
+        models.User.role == models.RoleEnum.dosen
+    ).all()
+    return dosen_list
 
 
 @router.get("/siswa-progress")

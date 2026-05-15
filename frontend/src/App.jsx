@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import DashboardDosen from './pages/DashboardDosen'
 import WorkspaceSiswa from './pages/WorkspaceSiswa'
 import ManajemenSoal from './pages/ManajemenSoal'
+import ManajemenAkun from './pages/ManajemenAkun'
 import AdminDashboard from './pages/AdminDashboard'
 
 function App() {
@@ -31,6 +32,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['dosen', 'super_admin']}>
               <ManajemenSoal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dosen/manajemen-akun"
+          element={
+            <ProtectedRoute allowedRoles={['dosen', 'super_admin']}>
+              <ManajemenAkun />
             </ProtectedRoute>
           }
         />

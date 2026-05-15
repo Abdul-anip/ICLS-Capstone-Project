@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Navbar({ role }) {
+function Navbar({ role, activePage }) {
   const navigate = useNavigate();
 
   // Ambil data user dari localStorage
@@ -47,9 +47,9 @@ function Navbar({ role }) {
         <div style={{ display: 'flex', gap: '24px', marginLeft: '20px', fontSize: '0.9rem' }}>
           {role === 'dosen' ? (
             <>
-              <span onClick={() => navigate('/dosen/dashboard')} style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: '600', borderBottom: '2px solid var(--accent-color)', paddingBottom: '4px' }}>Dashboard</span>
-              <span onClick={() => navigate('/dosen/soal')} style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Bank Soal</span>
-              <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Daftar Siswa</span>
+              <span onClick={() => navigate('/dosen/dashboard')} style={{ color: activePage === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'dashboard' ? '600' : 'normal', borderBottom: activePage === 'dashboard' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Dashboard</span>
+              <span onClick={() => navigate('/dosen/soal')} style={{ color: activePage === 'soal' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'soal' ? '600' : 'normal', borderBottom: activePage === 'soal' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Bank Soal</span>
+              <span onClick={() => navigate('/dosen/manajemen-akun')} style={{ color: activePage === 'manajemen' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'manajemen' ? '600' : 'normal', borderBottom: activePage === 'manajemen' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Manajemen Akun</span>
             </>
           ) : (
             <>
