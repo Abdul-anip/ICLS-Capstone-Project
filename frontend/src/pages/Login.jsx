@@ -35,7 +35,9 @@ function Login() {
       localStorage.setItem('user', JSON.stringify(data));
 
       // Arahkan sesuai role dari database
-      if (data.role === 'dosen') {
+      if (data.role === 'super_admin') {
+        navigate('/admin/dashboard');
+      } else if (data.role === 'dosen') {
         navigate('/dosen/dashboard');
       } else {
         navigate('/siswa/workspace');
