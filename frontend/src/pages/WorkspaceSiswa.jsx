@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const API = 'http://localhost:8000';
 
@@ -24,6 +25,12 @@ function WorkspaceSiswa() {
   const [bktProb, setBktProb] = useState(0.1);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSoal, setIsLoadingSoal] = useState(true);
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState('editor'); // 'editor' | 'riwayat'
+  const [bktStats, setBktStats] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // Data Soal
   const [soalList, setSoalList] = useState([]);
@@ -59,6 +66,32 @@ function WorkspaceSiswa() {
     setBktProb(soal.learned_prob);
     setCode(LANGUAGES[activeLang].template);
     setOutput('');
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'riwayat' && bktStats.length === 0) {
+      fetchHistoryData();
+    }
+  };
+
+  const fetchHistoryData = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const resBkt = await axios.get(`${API}/api/soal/siswa/${user.user_id}/bkt-stats`);
+      const chartData = resBkt.data.map(item => ({
+        name: item.nama_topik,
+        Penguasaan: Math.round(item.learned_prob * 100)
+      }));
+      setBktStats(chartData);
+
+      const resHist = await axios.get(`${API}/api/evaluasi/history/${user.user_id}`);
+      setHistory(resHist.data);
+    } catch (error) {
+      console.error('Gagal mengambil data riwayat', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   const handleLangChange = (e) => {
@@ -107,8 +140,35 @@ function WorkspaceSiswa() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Navbar role="siswa" activePage="workspace" />
+
+      {/* Tab Navigation Area */}
+      <div style={{ padding: '0 20px', maxWidth: '1400px', margin: '20px auto 0 auto', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--glass-border)' }}>
+          <button 
+            onClick={() => handleTabChange('editor')}
+            style={{ 
+              background: 'none', border: 'none', padding: '10px 20px', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold',
+              color: activeTab === 'editor' ? 'var(--accent-color)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'editor' ? '2px solid var(--accent-color)' : '2px solid transparent'
+            }}
+          >
+            🗂️ Ruang Koding
+          </button>
+          <button 
+            onClick={() => handleTabChange('riwayat')}
+            style={{ 
+              background: 'none', border: 'none', padding: '10px 20px', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold',
+              color: activeTab === 'riwayat' ? 'var(--accent-color)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'riwayat' ? '2px solid var(--accent-color)' : '2px solid transparent'
+            }}
+          >
+            📈 Analisis & Riwayat Latihan
+          </button>
+        </div>
+      </div>
       
-      <div className="editor-container" style={{ flex: 1, padding: '20px', gap: '20px', display: 'flex', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+      {activeTab === 'editor' ? (
+        <div className="editor-container" style={{ flex: 1, padding: '20px', gap: '20px', display: 'flex', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         
         {/* Sidebar Kiri: Daftar Soal & Topik */}
         <div style={{ width: '30%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -226,8 +286,98 @@ function WorkspaceSiswa() {
             </div>
           </div>
         </div>
-
       </div>
+      ) : (
+        <div style={{ flex: 1, padding: '20px', maxWidth: '1400px', margin: '0 auto', width: '100%', overflowY: 'auto' }}>
+          {isLoadingHistory ? (
+            <div style={{ textAlign: 'center', padding: '50px', color: 'var(--text-secondary)' }}>Memuat data statistik...</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+              {/* Section: BKT Chart */}
+              <div className="glass-panel" style={{ padding: '30px' }}>
+                <h2 style={{ fontSize: '1.2rem', marginBottom: '24px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+                  Tingkat Penguasaan Topik P(L)
+                </h2>
+                
+                {bktStats.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '40px' }}>
+                    Belum ada data topik. Kerjakan soal di Workspace untuk mulai membangun kurva BKT Anda!
+                  </div>
+                ) : (
+                  <div style={{ height: '350px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={bktStats} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                        <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} />
+                        <YAxis stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} domain={[0, 100]} unit="%" />
+                        <Tooltip 
+                          cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                          contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                          itemStyle={{ color: '#a78bfa', fontWeight: 'bold' }}
+                        />
+                        <Bar dataKey="Penguasaan" fill="#a78bfa" radius={[4, 4, 0, 0]} barSize={50} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+
+              {/* Section: Riwayat Submit */}
+              <div className="glass-panel" style={{ overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.1rem' }}>⏱️ Riwayat Submit Evaluasi</h2>
+                </div>
+                
+                {history.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    Belum ada riwayat submisi kode.
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
+                        <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Tanggal</th>
+                        <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Soal</th>
+                        <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Status Compiler</th>
+                        <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Hasil Akhir</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((h) => (
+                        <tr key={h.evaluasi_id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                            {new Date(h.timestamp).toLocaleString('id-ID')}
+                          </td>
+                          <td style={{ padding: '16px 24px' }}>{h.deskripsi_soal}</td>
+                          <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                            {h.status_compile}
+                          </td>
+                          <td style={{ padding: '16px 24px' }}>
+                            {h.binary_result === 1 ? (
+                              <span style={{
+                                background: 'rgba(63, 185, 80, 0.15)', borderRadius: '20px',
+                                padding: '4px 12px', fontSize: '0.8rem', color: 'var(--success-color)', fontWeight: 'bold'
+                              }}>Benar</span>
+                            ) : (
+                              <span style={{
+                                background: 'rgba(220, 38, 38, 0.15)', borderRadius: '20px',
+                                padding: '4px 12px', fontSize: '0.8rem', color: '#f87171', fontWeight: 'bold'
+                              }}>Salah</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

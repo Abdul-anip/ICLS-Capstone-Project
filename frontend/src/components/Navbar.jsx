@@ -54,9 +54,7 @@ function Navbar({ role, activePage }) {
             </>
           ) : (
             <>
-              <span style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: '600', borderBottom: '2px solid var(--accent-color)', paddingBottom: '4px' }}>Workspace Koding</span>
-              <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Riwayat Latihan</span>
-              <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Kurva BKT</span>
+              <span onClick={() => navigate('/siswa/workspace')} style={{ color: activePage === 'workspace' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'workspace' ? '600' : 'normal', borderBottom: activePage === 'workspace' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Workspace Koding</span>
               <span onClick={() => navigate('/profil')} style={{ color: activePage === 'profil' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'profil' ? '600' : 'normal', borderBottom: activePage === 'profil' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Profil</span>
             </>
           )}

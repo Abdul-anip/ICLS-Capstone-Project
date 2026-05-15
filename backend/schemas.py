@@ -133,3 +133,16 @@ class CodeEvaluationResponse(BaseModel):
     is_correct: bool
     output: str
     new_knowledge_state: float
+
+class BKTStatsResponse(BaseModel):
+    topik_id: int
+    nama_topik: str
+    learned_prob: float
+
+class EvaluasiHistoryResponse(BaseModel):
+    evaluasi_id: int
+    soal_id: int
+    deskripsi_soal: str
+    status_compile: str
+    binary_result: int
+    timestamp: datetime

@@ -78,3 +78,26 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
         output=judge_result["output"],
         new_knowledge_state=new_knowledge_prob
     )
+
+@router.get("/history/{user_id}", response_model=list[schemas.EvaluasiHistoryResponse])
+def get_evaluasi_history(user_id: int, db: Session = Depends(get_db)):
+    """Mengambil riwayat evaluasi / submit kode seorang siswa."""
+    siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
+
+    riwayat = db.query(models.Evaluasi).filter(models.Evaluasi.siswa_id == user_id).order_by(models.Evaluasi.timestamp.desc()).all()
+    
+    result = []
+    for r in riwayat:
+        soal = db.query(models.Soal).filter(models.Soal.soal_id == r.soal_id).first()
+        result.append(schemas.EvaluasiHistoryResponse(
+            evaluasi_id=r.evaluasi_id,
+            soal_id=r.soal_id,
+            deskripsi_soal=soal.deskripsi_soal[:50] + "..." if soal else "Unknown",
+            status_compile=r.status_compile,
+            binary_result=r.binary_result,
+            timestamp=r.timestamp
+        ))
+        
+    return result

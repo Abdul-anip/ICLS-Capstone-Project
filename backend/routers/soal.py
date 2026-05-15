@@ -100,3 +100,35 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
         })
         
     return result
+
+@router.get("/siswa/{user_id}/bkt-stats", response_model=list[schemas.BKTStatsResponse])
+def get_bkt_stats(user_id: int, db: Session = Depends(get_db)):
+    """Mengambil state BKT terakhir untuk setiap topik yang pernah dikerjakan oleh siswa."""
+    siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
+
+    # Ambil semua topik yang ada (ideal: ambil topik yang ada soalnya di instansi siswa)
+    dosen_instansi = db.query(models.User.user_id).filter(
+        models.User.instansi_id == siswa.instansi_id,
+        models.User.role == 'dosen'
+    ).subquery()
+    
+    soal_instansi = db.query(models.Soal.topik_id).filter(models.Soal.dosen_id.in_(dosen_instansi)).distinct().all()
+    topik_ids = [s.topik_id for s in soal_instansi]
+
+    result = []
+    for t_id in topik_ids:
+        topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == t_id).first()
+        bkt_record = db.query(models.BKTHistory).filter(
+            models.BKTHistory.siswa_id == user_id,
+            models.BKTHistory.topik_id == t_id
+        ).first()
+        
+        result.append(schemas.BKTStatsResponse(
+            topik_id=t_id,
+            nama_topik=topik.nama_topik if topik else "Topik Unknown",
+            learned_prob=bkt_record.learned_prob if bkt_record else 0.1
+        ))
+
+    return result
