@@ -96,6 +96,36 @@ def create_dosen(payload: schemas.DosenCreate, requestor_id: int, db: Session = 
     return new_dosen
 
 
+@router.post("/admin-create-dosen", response_model=schemas.UserListResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_dosen(payload: schemas.AdminDosenCreate, requestor_id: int, db: Session = Depends(get_db)):
+    """Super Admin membuat akun dosen untuk suatu instansi tertentu."""
+    requestor = db.query(models.User).filter(models.User.user_id == requestor_id).first()
+    if not requestor or requestor.role != models.RoleEnum.super_admin:
+        raise HTTPException(status_code=403, detail="Hanya Super Admin yang dapat mendaftarkan dosen lintas instansi.")
+
+    # Validasi instansi exist
+    instansi = db.query(models.Instansi).filter(models.Instansi.instansi_id == payload.instansi_id).first()
+    if not instansi:
+        raise HTTPException(status_code=404, detail="Instansi tidak ditemukan.")
+
+    # Validasi username unik
+    existing = db.query(models.User).filter(models.User.username == payload.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Username '{payload.username}' sudah digunakan.")
+
+    new_dosen = models.User(
+        username=payload.username,
+        password_hash=payload.password,
+        role=models.RoleEnum.dosen,
+        nama_lengkap=payload.nama_lengkap,
+        instansi_id=payload.instansi_id
+    )
+    db.add(new_dosen)
+    db.commit()
+    db.refresh(new_dosen)
+    return new_dosen
+
+
 @router.get("/siswa", response_model=list[schemas.UserListResponse])
 def get_all_siswa(requestor_id: int, db: Session = Depends(get_db)):
     """Dosen melihat daftar siswa di instansinya sendiri."""

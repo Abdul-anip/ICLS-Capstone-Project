@@ -77,6 +77,81 @@ function ModalTambahInstansi({ onClose, onSuccess, adminId }) {
   );
 }
 
+// ── Komponen Modal Tambah Dosen Instansi ──────────────────────────────────────
+function ModalTambahDosenInstansi({ onClose, onSuccess, adminId, instansi }) {
+  const [form, setForm] = useState({ username: '', password: '', nama_lengkap: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      const payload = { ...form, instansi_id: instansi.instansi_id };
+      const res = await fetch(`${API}/api/users/admin-create-dosen?requestor_id=${adminId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.detail || 'Gagal mendaftarkan dosen.'); setIsLoading(false); return; }
+      onSuccess(data);
+    } catch {
+      setError('Tidak dapat terhubung ke server.');
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+    }}>
+      <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '36px', margin: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>👨‍🏫 Buat Dosen Pertama</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px' }}>
+          Penempatan: <strong style={{ color: 'white' }}>{instansi.nama_instansi}</strong>
+        </p>
+
+        {error && (
+          <div style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', color: '#f87171', fontSize: '0.875rem' }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <label className="input-label">Nama Lengkap</label>
+            <input className="input-field" placeholder="Nama dosen..." value={form.nama_lengkap}
+              onChange={e => setForm({ ...form, nama_lengkap: e.target.value })} required disabled={isLoading} />
+          </div>
+          <div className="input-group">
+            <label className="input-label">Username</label>
+            <input className="input-field" placeholder="Username untuk login" value={form.username}
+              onChange={e => setForm({ ...form, username: e.target.value })} required disabled={isLoading} />
+          </div>
+          <div className="input-group">
+            <label className="input-label">Password</label>
+            <input type="password" className="input-field" placeholder="Kata sandi default" value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })} required disabled={isLoading} />
+          </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+            <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }} disabled={isLoading}>Batal</button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1, opacity: isLoading ? 0.7 : 1 }} disabled={isLoading}>
+              {isLoading ? 'Menyimpan...' : 'Simpan Dosen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Halaman Utama Admin Dashboard ─────────────────────────────────────────────
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -86,6 +161,8 @@ function AdminDashboard() {
   const [instansiList, setInstansiList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDosenModal, setShowDosenModal] = useState(false);
+  const [targetInstansi, setTargetInstansi] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState('');
 
@@ -121,6 +198,13 @@ function AdminDashboard() {
     setInstansiList(prev => [...prev, newInstansi]);
     setShowModal(false);
     setNotification(`✅ Instansi "${newInstansi.nama_instansi}" berhasil ditambahkan!`);
+    setTimeout(() => setNotification(''), 4000);
+  };
+
+  const handleDosenAdded = (newDosen) => {
+    setShowDosenModal(false);
+    setTargetInstansi(null);
+    setNotification(`✅ Dosen "${newDosen.nama_lengkap}" berhasil ditambahkan ke instansi!`);
     setTimeout(() => setNotification(''), 4000);
   };
 
@@ -245,6 +329,7 @@ function AdminDashboard() {
                   <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Kode Instansi</th>
                   <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Alamat</th>
                   <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Status</th>
+                  <th style={{ padding: '14px 24px', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -277,6 +362,15 @@ function AdminDashboard() {
                         Aktif
                       </span>
                     </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <button 
+                        onClick={() => { setTargetInstansi(inst); setShowDosenModal(true); }}
+                        className="btn btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'var(--accent-color)' }}
+                      >
+                        + Dosen
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -285,12 +379,22 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Instansi */}
       {showModal && (
         <ModalTambahInstansi
           adminId={user?.user_id}
           onClose={() => setShowModal(false)}
           onSuccess={handleInstansiAdded}
+        />
+      )}
+
+      {/* Modal Dosen */}
+      {showDosenModal && targetInstansi && (
+        <ModalTambahDosenInstansi
+          adminId={user?.user_id}
+          instansi={targetInstansi}
+          onClose={() => { setShowDosenModal(false); setTargetInstansi(null); }}
+          onSuccess={handleDosenAdded}
         />
       )}
     </div>

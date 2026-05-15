@@ -60,6 +60,12 @@ class DosenCreate(BaseModel):
     nama_lengkap: str
     # instansi_id akan otomatis diisi dari dosen yang sedang login
 
+class AdminDosenCreate(BaseModel):
+    username: str
+    password: str
+    nama_lengkap: str
+    instansi_id: int
+
 class UserUpdate(BaseModel):
     nama_lengkap: Optional[str] = None
     nama_kelas: Optional[str] = None
