@@ -8,6 +8,7 @@ import WorkspaceSiswa from './pages/WorkspaceSiswa'
 import ManajemenSoal from './pages/ManajemenSoal'
 import ManajemenAkun from './pages/ManajemenAkun'
 import AdminDashboard from './pages/AdminDashboard'
+import ProfilAkun from './pages/ProfilAkun'
 
 function App() {
   return (
@@ -50,6 +51,16 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['siswa']}>
               <WorkspaceSiswa />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rute Profil (Umum) */}
+        <Route
+          path="/profil"
+          element={
+            <ProtectedRoute allowedRoles={['siswa', 'dosen', 'super_admin']}>
+              <ProfilAkun />
             </ProtectedRoute>
           }
         />

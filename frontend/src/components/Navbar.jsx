@@ -50,12 +50,14 @@ function Navbar({ role, activePage }) {
               <span onClick={() => navigate('/dosen/dashboard')} style={{ color: activePage === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'dashboard' ? '600' : 'normal', borderBottom: activePage === 'dashboard' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Dashboard</span>
               <span onClick={() => navigate('/dosen/soal')} style={{ color: activePage === 'soal' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'soal' ? '600' : 'normal', borderBottom: activePage === 'soal' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Bank Soal</span>
               <span onClick={() => navigate('/dosen/manajemen-akun')} style={{ color: activePage === 'manajemen' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'manajemen' ? '600' : 'normal', borderBottom: activePage === 'manajemen' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Manajemen Akun</span>
+              <span onClick={() => navigate('/profil')} style={{ color: activePage === 'profil' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'profil' ? '600' : 'normal', borderBottom: activePage === 'profil' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Profil</span>
             </>
           ) : (
             <>
               <span style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: '600', borderBottom: '2px solid var(--accent-color)', paddingBottom: '4px' }}>Workspace Koding</span>
               <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Riwayat Latihan</span>
-              <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Kurva BKT Saya</span>
+              <span style={{ color: 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.2s' }}>Kurva BKT</span>
+              <span onClick={() => navigate('/profil')} style={{ color: activePage === 'profil' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: activePage === 'profil' ? '600' : 'normal', borderBottom: activePage === 'profil' ? '2px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Profil</span>
             </>
           )}
         </div>
