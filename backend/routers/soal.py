@@ -59,3 +59,44 @@ def get_all_soal(db: Session = Depends(get_db)):
             "testcases": testcases
         })
     return result
+
+@router.get("/siswa/{user_id}")
+def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
+    """Mengambil daftar soal untuk siswa beserta nama topik dan state BKT saat ini."""
+    siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
+
+    # Ambil dosen yang ada di instansi yang sama dengan siswa
+    dosen_instansi = db.query(models.User.user_id).filter(
+        models.User.instansi_id == siswa.instansi_id,
+        models.User.role == 'dosen'
+    ).subquery()
+
+    # Ambil soal yang dibuat oleh dosen-dosen tersebut
+    soal_list = db.query(models.Soal).filter(models.Soal.dosen_id.in_(dosen_instansi)).all()
+
+    result = []
+    for s in soal_list:
+        # Ambil nama topik
+        topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == s.topik_id).first()
+        nama_topik = topik.nama_topik if topik else "Topik Tidak Diketahui"
+
+        # Ambil state BKT terakhir untuk siswa dan topik ini
+        bkt_record = db.query(models.BKTHistory).filter(
+            models.BKTHistory.siswa_id == user_id,
+            models.BKTHistory.topik_id == s.topik_id
+        ).first()
+        
+        learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+
+        result.append({
+            "soal_id": s.soal_id,
+            "topik_id": s.topik_id,
+            "nama_topik": nama_topik,
+            "deskripsi_soal": s.deskripsi_soal,
+            "tingkat_kesulitan": s.tingkat_kesulitan,
+            "learned_prob": learned_prob
+        })
+        
+    return result
