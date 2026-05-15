@@ -5,12 +5,21 @@ import Navbar from '../components/Navbar';
 
 const API = 'http://localhost:8000';
 
+const LANGUAGES = {
+  71: { name: 'Python 3', template: '# Tulis kodemu disini\n', ext: 'main.py' },
+  54: { name: 'C++ (GCC)', template: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Tulis kodemu disini\n    return 0;\n}', ext: 'main.cpp' },
+  62: { name: 'Java', template: 'public class Main {\n    public static void main(String[] args) {\n        // Tulis kodemu disini\n    }\n}', ext: 'Main.java' },
+  63: { name: 'JavaScript', template: '// Tulis kodemu disini\n', ext: 'main.js' },
+  68: { name: 'PHP', template: '<?php\n// Tulis kodemu disini\n\n?>', ext: 'main.php' }
+};
+
 function WorkspaceSiswa() {
   const navigate = useNavigate();
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
 
-  const [code, setCode] = useState('# Tulis kodemu disini\n');
+  const [activeLang, setActiveLang] = useState(71); // Default Python 3
+  const [code, setCode] = useState(LANGUAGES[71].template);
   const [output, setOutput] = useState('');
   const [bktProb, setBktProb] = useState(0.1);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +57,14 @@ function WorkspaceSiswa() {
   const handleSelectSoal = (soal) => {
     setActiveSoalId(soal.soal_id);
     setBktProb(soal.learned_prob);
-    setCode('# Tulis kodemu disini\n');
+    setCode(LANGUAGES[activeLang].template);
     setOutput('');
+  };
+
+  const handleLangChange = (e) => {
+    const langId = parseInt(e.target.value);
+    setActiveLang(langId);
+    setCode(LANGUAGES[langId].template);
   };
 
   const activeSoal = soalList.find(s => s.soal_id === activeSoalId);
@@ -65,7 +80,7 @@ function WorkspaceSiswa() {
         siswa_id: user.user_id,
         soal_id: activeSoal.soal_id,
         source_code: code,
-        language_id: 71 // Python
+        language_id: activeLang
       });
       
       const { status_compile, is_correct, output: apiOutput, new_knowledge_state } = response.data;
@@ -175,8 +190,16 @@ function WorkspaceSiswa() {
           <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid var(--glass-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#E3C15D', fontWeight: 'bold', fontFamily: 'monospace' }}>Python 3</span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>main.py</span>
+                <select 
+                  value={activeLang} 
+                  onChange={handleLangChange}
+                  style={{ background: 'rgba(0,0,0,0.5)', color: '#E3C15D', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', padding: '4px 8px', fontWeight: 'bold', fontFamily: 'monospace', outline: 'none', cursor: 'pointer' }}
+                >
+                  {Object.entries(LANGUAGES).map(([id, lang]) => (
+                    <option key={id} value={id}>{lang.name}</option>
+                  ))}
+                </select>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{LANGUAGES[activeLang].ext}</span>
               </div>
               <button className="btn btn-primary" onClick={handleSubmit} disabled={isLoading || !activeSoal}>
                 {isLoading ? 'Mengevaluasi...' : 'Jalankan & Submit'}
