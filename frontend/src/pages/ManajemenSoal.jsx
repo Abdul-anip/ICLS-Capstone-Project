@@ -8,21 +8,27 @@ function ManajemenSoal() {
   const [soalList, setSoalList] = useState([]);
   const [topikList, setTopikList] = useState([]);
   
-  // State form
+  // State form soal
   const [soal, setSoal] = useState('');
   const [topikId, setTopikId] = useState('');
   const [kesulitan, setKesulitan] = useState('Mudah');
   const [inputData, setInputData] = useState('');
   const [expectedOutput, setExpectedOutput] = useState('');
   
-  // State kontrol
+  // State kontrol soal
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Ambil user dari localStorage (asumsi login dosen)
+  // State kontrol topik
+  const [isTopikModalOpen, setIsTopikModalOpen] = useState(false);
+  const [namaTopikBaru, setNamaTopikBaru] = useState('');
+  const [deskripsiTopikBaru, setDeskripsiTopikBaru] = useState('');
+  const [topikMessage, setTopikMessage] = useState('');
+  const [topikMessageType, setTopikMessageType] = useState('success'); // 'success' | 'error'
+
+  // Ambil user dari localStorage
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : { user_id: 1, role: 'dosen' };
 
@@ -35,7 +41,6 @@ function ManajemenSoal() {
     try {
       const res = await axios.get(`${API}/api/soal/topik`);
       setTopikList(res.data);
-      // Set default topik pertama jika belum ada yang dipilih
       if (res.data.length > 0) {
         setTopikId(res.data[0].topik_id);
       }
@@ -47,13 +52,13 @@ function ManajemenSoal() {
   const fetchDaftarSoal = async () => {
     try {
       const res = await axios.get(`${API}/api/soal/`);
-      const dataSoal = res.data; 
-      setSoalList(dataSoal);
+      setSoalList(res.data);
     } catch (err) {
       console.error('Gagal mengambil daftar soal:', err);
     }
   };
 
+  // ── Handlers Modal Soal ──
   const openAddModal = () => {
     resetForm();
     setIsModalOpen(true);
@@ -72,6 +77,7 @@ function ManajemenSoal() {
     setExpectedOutput('');
     setIsEditing(false);
     setEditId(null);
+    setMessage('');
   };
 
   const handleSubmit = async (e) => {
@@ -100,7 +106,6 @@ function ManajemenSoal() {
       
       fetchDaftarSoal();
       closeAddModal();
-      // Bisa gunakan komponen Toast/Alert terpisah, tapi untuk kesederhanaan kita abaikan message sukses di background list
     } catch (err) {
       setMessage('Error saat menyimpan soal. Pastikan Backend berjalan.');
       console.error(err);
@@ -137,21 +142,86 @@ function ManajemenSoal() {
     }
   };
 
+  // ── Handlers Modal Topik ──
+  const openTopikModal = () => {
+    setIsTopikModalOpen(true);
+    setNamaTopikBaru('');
+    setDeskripsiTopikBaru('');
+    setTopikMessage('');
+  };
+
+  const closeTopikModal = () => {
+    setIsTopikModalOpen(false);
+    setNamaTopikBaru('');
+    setDeskripsiTopikBaru('');
+    setTopikMessage('');
+  };
+
+  const handleTambahTopik = async (e) => {
+    e.preventDefault();
+    if (!namaTopikBaru.trim()) {
+      setTopikMessage('Nama topik tidak boleh kosong.');
+      setTopikMessageType('error');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/api/soal/topik`, {
+        nama_topik: namaTopikBaru.trim(),
+        deskripsi: deskripsiTopikBaru.trim() || null
+      });
+      setTopikMessage(`Topik "${namaTopikBaru.trim()}" berhasil ditambahkan!`);
+      setTopikMessageType('success');
+      setNamaTopikBaru('');
+      setDeskripsiTopikBaru('');
+      fetchTopikList(); // Refresh dropdown di form soal juga
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Gagal menambahkan topik.';
+      setTopikMessage(detail);
+      setTopikMessageType('error');
+    }
+  };
+
+  const handleHapusTopik = async (topik_id, nama_topik) => {
+    if (!window.confirm(`Yakin ingin menghapus topik "${nama_topik}"?\n\nTopik hanya bisa dihapus jika tidak ada soal yang menggunakannya.`)) return;
+    
+    try {
+      await axios.delete(`${API}/api/soal/topik/${topik_id}`);
+      setTopikMessage(`Topik "${nama_topik}" berhasil dihapus.`);
+      setTopikMessageType('success');
+      fetchTopikList();
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Gagal menghapus topik.';
+      setTopikMessage(detail);
+      setTopikMessageType('error');
+    }
+  };
+
+  // Hitung jumlah soal per topik untuk badge
+  const getSoalCountForTopik = (topik_id) => {
+    return soalList.filter(s => s.topik_id === topik_id).length;
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <Navbar role="dosen" />
       
       <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
         
-        {/* Header & Main Area: Tabel Daftar Soal */}
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Bank Soal & Test Case</h1>
             <p style={{ color: 'var(--text-secondary)' }}>Manajemen soal pemrograman ICLS</p>
           </div>
-          <button onClick={openAddModal} className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>➕</span> Tambah Soal Baru
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={openTopikModal} className="btn" style={{ padding: '10px 20px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid var(--glass-border)' }}>
+              <span>📂</span> Kelola Topik
+            </button>
+            <button onClick={openAddModal} className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>➕</span> Tambah Soal Baru
+            </button>
+          </div>
         </div>
 
         <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -229,7 +299,9 @@ function ManajemenSoal() {
 
       </div>
 
-      {/* ── Modal Popup (Form Tambah / Edit) ── */}
+      {/* ══════════════════════════════════════════════ */}
+      {/* ── Modal: Tambah / Edit Soal ──               */}
+      {/* ══════════════════════════════════════════════ */}
       {isModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -327,6 +399,141 @@ function ManajemenSoal() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════ */}
+      {/* ── Modal: Kelola Topik Materi ──              */}
+      {/* ══════════════════════════════════════════════ */}
+      {isTopikModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+        }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            
+            {/* Header */}
+            <div style={{ padding: '20px 30px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>📂 Kelola Topik Materi</h2>
+              <button onClick={closeTopikModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>
+                &times;
+              </button>
+            </div>
+
+            <div style={{ padding: '24px 30px', overflowY: 'auto', flex: 1 }}>
+
+              {/* Pesan feedback */}
+              {topikMessage && (
+                <div style={{ 
+                  padding: '12px 16px', marginBottom: '20px', borderRadius: '8px', fontSize: '0.9rem',
+                  background: topikMessageType === 'error' ? 'rgba(248, 81, 73, 0.15)' : 'rgba(63, 185, 80, 0.15)', 
+                  color: topikMessageType === 'error' ? 'var(--danger-color)' : 'var(--success-color)',
+                  border: `1px solid ${topikMessageType === 'error' ? 'rgba(248, 81, 73, 0.3)' : 'rgba(63, 185, 80, 0.3)'}`
+                }}>
+                  {topikMessageType === 'error' ? '⚠️' : '✅'} {topikMessage}
+                </div>
+              )}
+
+              {/* Form Tambah Topik Baru */}
+              <form onSubmit={handleTambahTopik} style={{ marginBottom: '28px' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: '16px', color: 'var(--accent-color)' }}>➕ Tambah Topik Baru</h3>
+                <div className="input-group" style={{ marginBottom: '12px' }}>
+                  <label className="input-label">Nama Topik <span style={{ color: 'var(--danger-color)' }}>*</span></label>
+                  <input 
+                    className="input-field" 
+                    type="text"
+                    value={namaTopikBaru} 
+                    onChange={e => setNamaTopikBaru(e.target.value)} 
+                    placeholder="Contoh: Percabangan, Perulangan, Fungsi..."
+                    required
+                  />
+                </div>
+                <div className="input-group" style={{ marginBottom: '16px' }}>
+                  <label className="input-label">Deskripsi (Opsional)</label>
+                  <textarea 
+                    className="input-field" 
+                    rows="2" 
+                    value={deskripsiTopikBaru} 
+                    onChange={e => setDeskripsiTopikBaru(e.target.value)} 
+                    placeholder="Penjelasan singkat tentang topik materi ini..."
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px' }}>
+                  Simpan Topik Baru
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div style={{ borderBottom: '1px solid var(--glass-border)', marginBottom: '24px' }} />
+
+              {/* Daftar Topik */}
+              <h3 style={{ fontSize: '1rem', marginBottom: '16px' }}>📋 Daftar Topik Terdaftar ({topikList.length})</h3>
+              
+              {topikList.length === 0 ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Belum ada topik materi. Silakan tambahkan topik baru di atas.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {topikList.map(t => {
+                    const soalCount = getSoalCountForTopik(t.topik_id);
+                    return (
+                      <div 
+                        key={t.topik_id} 
+                        style={{ 
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '14px 16px', borderRadius: '8px', 
+                          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: 'bold', color: 'var(--accent-color)', fontSize: '0.8rem', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px' }}>
+                              ID: {t.topik_id}
+                            </span>
+                            <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>{t.nama_topik}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+                            {t.deskripsi && (
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t.deskripsi}</span>
+                            )}
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '10px' }}>
+                              {soalCount} soal
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleHapusTopik(t.topik_id, t.nama_topik)}
+                          title={soalCount > 0 ? `Tidak bisa dihapus (${soalCount} soal terkait)` : 'Hapus topik ini'}
+                          style={{ 
+                            background: soalCount > 0 ? 'rgba(255,255,255,0.03)' : 'rgba(248, 81, 73, 0.12)', 
+                            border: 'none', 
+                            color: soalCount > 0 ? 'var(--text-secondary)' : 'var(--danger-color)', 
+                            padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem',
+                            opacity: soalCount > 0 ? 0.5 : 1,
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '16px 30px', borderTop: '1px solid var(--glass-border)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+              <button onClick={closeTopikModal} className="btn" style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid var(--glass-border)', padding: '10px' }}>
+                Tutup
+              </button>
             </div>
           </div>
         </div>

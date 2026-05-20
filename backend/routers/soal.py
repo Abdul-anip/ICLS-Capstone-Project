@@ -58,6 +58,46 @@ def get_all_topik(db: Session = Depends(get_db)):
         for t in topik_list
     ]
 
+@router.post("/topik", response_model=schemas.TopikMateriResponse)
+def create_topik(payload: schemas.TopikMateriCreate, db: Session = Depends(get_db)):
+    """Menambahkan Topik Materi baru ke database."""
+    # Cek duplikat nama topik
+    existing = db.query(models.TopikMateri).filter(models.TopikMateri.nama_topik == payload.nama_topik).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Topik dengan nama '{payload.nama_topik}' sudah ada.")
+
+    db_topik = models.TopikMateri(
+        nama_topik=payload.nama_topik,
+        deskripsi=payload.deskripsi
+    )
+    db.add(db_topik)
+    db.commit()
+    db.refresh(db_topik)
+    return db_topik
+
+@router.delete("/topik/{topik_id}")
+def delete_topik(topik_id: int, db: Session = Depends(get_db)):
+    """Menghapus Topik Materi. Gagal jika masih ada soal yang menggunakan topik ini."""
+    topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == topik_id).first()
+    if not topik:
+        raise HTTPException(status_code=404, detail="Topik tidak ditemukan.")
+
+    # Cek apakah ada soal yang masih menggunakan topik ini
+    soal_count = db.query(models.Soal).filter(models.Soal.topik_id == topik_id).count()
+    if soal_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tidak bisa menghapus topik ini karena masih digunakan oleh {soal_count} soal. Hapus soal terkait terlebih dahulu."
+        )
+
+    # Hapus juga BKT history yang terkait topik ini
+    db.query(models.BKTHistory).filter(models.BKTHistory.topik_id == topik_id).delete()
+
+    db.delete(topik)
+    db.commit()
+    return {"message": f"Topik '{topik.nama_topik}' berhasil dihapus."}
+
+
 @router.get("/")
 def get_all_soal(db: Session = Depends(get_db)):
     soal_list = db.query(models.Soal).all()

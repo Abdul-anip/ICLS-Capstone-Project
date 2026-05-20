@@ -23,6 +23,23 @@ class InstansiResponse(BaseModel):
 
 
 # ─────────────────────────────────────────
+# Skema Topik Materi
+# ─────────────────────────────────────────
+
+class TopikMateriCreate(BaseModel):
+    nama_topik: str
+    deskripsi: Optional[str] = None
+
+class TopikMateriResponse(BaseModel):
+    topik_id: int
+    nama_topik: str
+    deskripsi: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
+# ─────────────────────────────────────────
 # Skema Autentikasi
 # ─────────────────────────────────────────
 
