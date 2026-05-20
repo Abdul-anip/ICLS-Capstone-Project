@@ -45,6 +45,19 @@ def create_soal_with_testcase(payload: schemas.SoalWithTestCaseCreate, db: Sessi
     
     return db_soal
 
+@router.get("/topik")
+def get_all_topik(db: Session = Depends(get_db)):
+    """Mengambil seluruh daftar Topik Materi dari database."""
+    topik_list = db.query(models.TopikMateri).all()
+    return [
+        {
+            "topik_id": t.topik_id,
+            "nama_topik": t.nama_topik,
+            "deskripsi": t.deskripsi
+        }
+        for t in topik_list
+    ]
+
 @router.get("/")
 def get_all_soal(db: Session = Depends(get_db)):
     soal_list = db.query(models.Soal).all()
@@ -59,6 +72,52 @@ def get_all_soal(db: Session = Depends(get_db)):
             "testcases": testcases
         })
     return result
+
+@router.put("/{soal_id}", response_model=schemas.SoalResponse)
+def update_soal(soal_id: int, payload: schemas.SoalWithTestCaseUpdate, db: Session = Depends(get_db)):
+    soal = db.query(models.Soal).filter(models.Soal.soal_id == soal_id).first()
+    if not soal:
+        raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
+    
+    # Update atribut soal
+    soal.topik_id = payload.topik_id
+    soal.deskripsi_soal = payload.deskripsi_soal
+    soal.tingkat_kesulitan = payload.tingkat_kesulitan
+    
+    # Hapus semua test case lama
+    db.query(models.TestCase).filter(models.TestCase.soal_id == soal_id).delete()
+    
+    # Masukkan test case baru
+    for tc in payload.testcases:
+        db_testcase = models.TestCase(
+            soal_id=soal_id,
+            input_data=tc.input_data,
+            expected_output=tc.expected_output,
+            is_hidden=False
+        )
+        db.add(db_testcase)
+        
+    db.commit()
+    db.refresh(soal)
+    return soal
+
+@router.delete("/{soal_id}")
+def delete_soal(soal_id: int, db: Session = Depends(get_db)):
+    soal = db.query(models.Soal).filter(models.Soal.soal_id == soal_id).first()
+    if not soal:
+        raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
+        
+    # Hapus evaluasi yang terikat dengan soal ini (supaya tidak melanggar foreign key constraints)
+    db.query(models.Evaluasi).filter(models.Evaluasi.soal_id == soal_id).delete()
+    
+    # Hapus testcase yang terikat
+    db.query(models.TestCase).filter(models.TestCase.soal_id == soal_id).delete()
+    
+    # Hapus soal
+    db.delete(soal)
+    db.commit()
+    return {"message": "Soal beserta riwayat evaluasi dan test case berhasil dihapus"}
+
 
 @router.get("/siswa/{user_id}")
 def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):

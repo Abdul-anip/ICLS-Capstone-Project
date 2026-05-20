@@ -248,21 +248,35 @@ def get_dashboard_stats(requestor_id: int, db: Session = Depends(get_db)):
         topik_stats[bkt.topik_id].append(bkt.learned_prob)
 
     topik_tersulit = None
+    topik_chart_data = []
+    
     if topik_stats:
         topik_id_tersulit = min(topik_stats, key=lambda t: sum(topik_stats[t]) / len(topik_stats[t]))
-        topik_obj = db.query(models.TopikMateri).filter(
-            models.TopikMateri.topik_id == topik_id_tersulit
-        ).first()
-        if topik_obj:
-            avg_topik = sum(topik_stats[topik_id_tersulit]) / len(topik_stats[topik_id_tersulit])
-            topik_tersulit = {
-                "nama": topik_obj.nama_topik,
-                "avg_bkt": round(avg_topik, 4)
-            }
+        
+        # Ambil semua nama topik sekaligus
+        topik_ids = list(topik_stats.keys())
+        topik_objs = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id.in_(topik_ids)).all()
+        topik_dict = {t.topik_id: t.nama_topik for t in topik_objs}
+
+        for tid, probs in topik_stats.items():
+            avg_t = sum(probs) / len(probs)
+            nama_t = topik_dict.get(tid, f"Topik {tid}")
+            
+            topik_chart_data.append({
+                "nama": nama_t,
+                "avg_bkt": round(avg_t, 4)
+            })
+            
+            if tid == topik_id_tersulit:
+                topik_tersulit = {
+                    "nama": nama_t,
+                    "avg_bkt": round(avg_t, 4)
+                }
 
     return {
         "total_siswa": total_siswa,
         "total_soal": total_soal,
         "avg_bkt_kelas": round(avg_bkt_kelas, 4),
-        "topik_tersulit": topik_tersulit
+        "topik_tersulit": topik_tersulit,
+        "topik_chart_data": topik_chart_data
     }

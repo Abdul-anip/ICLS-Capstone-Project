@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 const API = 'http://127.0.0.1:8000';
 
@@ -147,6 +148,51 @@ function DashboardDosen() {
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px' }}>Soal aktif di bank soal</div>
           </div>
+        </div>
+
+        {/* ── BKT Class Analytics Chart ── */}
+        <div className="glass-panel" style={{ padding: '30px', marginBottom: '36px' }}>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>📈 Rata-rata P(L) Kelas per Topik</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '24px' }}>
+            Analisis tingkat pemahaman agregat seluruh siswa berdasarkan topik. Fokuskan materi pada topik dengan persentase rendah (merah/kuning).
+          </p>
+
+          {isLoadingStats ? (
+            <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+              Memuat grafik analitik...
+            </div>
+          ) : !stats?.topik_chart_data || stats.topik_chart_data.length === 0 ? (
+            <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+              Belum ada data evaluasi siswa untuk dianalisis.
+            </div>
+          ) : (
+            <div style={{ height: '350px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.topik_chart_data.map(d => ({ name: d.nama, value: Math.round(d.avg_bkt * 100) }))} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} angle={-25} textAnchor="end" />
+                  <YAxis stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} domain={[0, 100]} unit="%" />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                    itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                    formatter={(value) => [`${value}%`, 'Rata-rata P(L)']}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                    {
+                      stats.topik_chart_data.map((entry, index) => {
+                        const val = Math.round(entry.avg_bkt * 100);
+                        let fill = 'var(--accent-color)'; // default / sedang
+                        if (val >= 70) fill = 'var(--success-color)'; // baik
+                        else if (val < 40) fill = 'var(--danger-color)'; // kurang
+                        return <Cell key={`cell-${index}`} fill={fill} />;
+                      })
+                    }
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* ── Tabel Progress Siswa ── */}

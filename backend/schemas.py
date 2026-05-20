@@ -117,6 +117,12 @@ class SoalWithTestCaseCreate(BaseModel):
     tingkat_kesulitan: str
     testcases: List[TestCaseCreate]
 
+class SoalWithTestCaseUpdate(BaseModel):
+    topik_id: int
+    deskripsi_soal: str
+    tingkat_kesulitan: str
+    testcases: List[TestCaseCreate]
+
 
 # ─────────────────────────────────────────
 # Skema Evaluasi & BKT
