@@ -43,8 +43,12 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
 
     current_prob = bkt_record.learned_prob if bkt_record else 0.1
     
-    # Kalkulasi Knowledge State baru
-    new_knowledge_prob = calculate_new_state(current_prob=current_prob, is_correct=is_correct)
+    # Kalkulasi Knowledge State baru berdasarkan tingkat kesulitan soal
+    new_knowledge_prob = calculate_new_state(
+        current_prob=current_prob, 
+        is_correct=is_correct, 
+        tingkat_kesulitan=soal.tingkat_kesulitan
+    )
 
     # Simpan atau update state BKT ke database
     if bkt_record:
