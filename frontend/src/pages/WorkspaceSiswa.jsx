@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Editor from '@monaco-editor/react';
 import Navbar from '../components/Navbar';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const API = 'http://localhost:8000';
 
 const LANGUAGES = {
-  71: { name: 'Python 3', template: '# Tulis kodemu disini\n', ext: 'main.py' },
-  54: { name: 'C++ (GCC)', template: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Tulis kodemu disini\n    return 0;\n}', ext: 'main.cpp' },
-  62: { name: 'Java', template: 'public class Main {\n    public static void main(String[] args) {\n        // Tulis kodemu disini\n    }\n}', ext: 'Main.java' },
-  63: { name: 'JavaScript', template: '// Tulis kodemu disini\n', ext: 'main.js' },
-  68: { name: 'PHP', template: '<?php\n// Tulis kodemu disini\n\n?>', ext: 'main.php' }
+  71: { name: 'Python 3', template: '# Tulis kodemu disini\n', ext: 'main.py', monacoLang: 'python' },
+  54: { name: 'C++ (GCC)', template: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Tulis kodemu disini\n    return 0;\n}', ext: 'main.cpp', monacoLang: 'cpp' },
+  62: { name: 'Java', template: 'public class Main {\n    public static void main(String[] args) {\n        // Tulis kodemu disini\n    }\n}', ext: 'Main.java', monacoLang: 'java' },
+  63: { name: 'JavaScript', template: '// Tulis kodemu disini\n', ext: 'main.js', monacoLang: 'javascript' },
+  68: { name: 'PHP', template: '<?php\n// Tulis kodemu disini\n\n?>', ext: 'main.php', monacoLang: 'php' }
 };
 
 function WorkspaceSiswa() {
@@ -22,6 +23,8 @@ function WorkspaceSiswa() {
   const [activeLang, setActiveLang] = useState(71); // Default Python 3
   const [code, setCode] = useState(LANGUAGES[71].template);
   const [output, setOutput] = useState('');
+  const [fontSize, setFontSize] = useState(14);
+  const editorRef = useRef(null);
   const [bktProb, setBktProb] = useState(0.1);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSoal, setIsLoadingSoal] = useState(true);
@@ -140,16 +143,16 @@ function WorkspaceSiswa() {
 
       if (is_duplicate) {
         // Tampilkan peringatan khusus — kode sama, BKT tidak diupdate
-        outText += `⚠️  PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
+        outText += `PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
         outText += `─────────────────────────────────────────────\n`;
         outText += `Tingkat Pemahaman (BKT) tidak diperbarui.\n`;
         outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
         outText += `Hasil submit sebelumnya:\n`;
         outText += `Status: ${status_compile}\n`;
-        outText += `Benar?: ${is_correct ? 'Ya ✅' : 'Tidak ❌'}`;
+        outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}`;
       } else {
         outText = `Status: ${status_compile}\n`;
-        outText += `Benar?: ${is_correct ? 'Ya ✅' : 'Tidak ❌'}\n\n`;
+        outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}\n\n`;
         outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}`;
       }
       
@@ -186,7 +189,7 @@ function WorkspaceSiswa() {
               borderBottom: activeTab === 'editor' ? '2px solid var(--accent-color)' : '2px solid transparent'
             }}
           >
-            🗂️ Ruang Koding
+            Ruang Koding
           </button>
           <button 
             onClick={() => handleTabChange('riwayat')}
@@ -196,7 +199,7 @@ function WorkspaceSiswa() {
               borderBottom: activeTab === 'riwayat' ? '2px solid var(--accent-color)' : '2px solid transparent'
             }}
           >
-            📈 Analisis & Riwayat Latihan
+            Analisis & Riwayat Latihan
           </button>
         </div>
       </div>
@@ -209,7 +212,7 @@ function WorkspaceSiswa() {
           
           <div className="glass-panel" style={{ padding: '20px', flex: '0 0 auto' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              📚 Daftar Latihan
+              Daftar Latihan
             </h3>
             
             {isLoadingSoal ? (
@@ -278,7 +281,7 @@ function WorkspaceSiswa() {
                 </div>
                 {bktProb > 0.95 && (
                   <p style={{ color: 'var(--success-color)', fontSize: '0.8rem', marginTop: '10px', fontWeight: 'bold' }}>
-                    🎉 Topik Dikuasai!
+                    Topik Dikuasai!
                   </p>
                 )}
               </div>
@@ -301,20 +304,78 @@ function WorkspaceSiswa() {
                   ))}
                 </select>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{LANGUAGES[activeLang].ext}</span>
+                {/* Font Size Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px', borderLeft: '1px solid var(--glass-border)', paddingLeft: '12px' }}>
+                  <button
+                    onClick={() => setFontSize(prev => Math.max(10, prev - 1))}
+                    title="Perkecil font"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: 'var(--text-secondary)', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', transition: 'all 0.2s' }}
+                  >−</button>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', minWidth: '32px', textAlign: 'center', fontFamily: 'monospace' }}>{fontSize}px</span>
+                  <button
+                    onClick={() => setFontSize(prev => Math.min(28, prev + 1))}
+                    title="Perbesar font"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: 'var(--text-secondary)', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', transition: 'all 0.2s' }}
+                  >+</button>
+                </div>
               </div>
-              <button className="btn btn-primary" onClick={handleSubmit} disabled={isLoading || !activeSoal}>
-                {isLoading ? 'Mengevaluasi...' : 'Jalankan & Submit'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.7 }}>Ctrl+Enter untuk submit</span>
+                <button id="btn-submit-code" className="btn btn-primary" onClick={handleSubmit} disabled={isLoading || !activeSoal}>
+                  {isLoading ? 'Mengevaluasi...' : 'Jalankan & Submit'}
+                </button>
+              </div>
             </div>
             
-            <textarea 
-              className="code-area" 
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck="false"
-              style={{ flex: 1, padding: '20px', fontFamily: "'Fira Code', monospace", fontSize: '0.95rem', background: 'transparent', border: 'none', color: '#e6edf3', resize: 'none', outline: 'none' }}
-              disabled={!activeSoal}
-            />
+            <div style={{ flex: 1 }}>
+              <Editor
+                height="100%"
+                language={LANGUAGES[activeLang].monacoLang}
+                value={code}
+                onChange={(value) => setCode(value || '')}
+                theme="vs-dark"
+                onMount={(editor, monaco) => {
+                  editorRef.current = editor;
+                  // Shortcut Ctrl+Enter untuk submit
+                  editor.addAction({
+                    id: 'submit-code',
+                    label: 'Jalankan & Submit',
+                    keybindings: [
+                      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter
+                    ],
+                    run: () => {
+                      document.getElementById('btn-submit-code')?.click();
+                    }
+                  });
+                }}
+                options={{
+                  fontSize: fontSize,
+                  fontFamily: "'Fira Code', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace",
+                  fontLigatures: true,
+                  minimap: { enabled: true },
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  automaticLayout: true,
+                  padding: { top: 16, bottom: 16 },
+                  lineNumbers: 'on',
+                  renderLineHighlight: 'all',
+                  bracketPairColorization: { enabled: true },
+                  autoClosingBrackets: 'always',
+                  autoClosingQuotes: 'always',
+                  suggestOnTriggerCharacters: true,
+                  tabSize: 4,
+                  cursorBlinking: 'smooth',
+                  cursorSmoothCaretAnimation: 'on',
+                  smoothScrolling: true,
+                  readOnly: !activeSoal,
+                }}
+                loading={
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                    Memuat editor...
+                  </div>
+                }
+              />
+            </div>
           </div>
 
           <div className="glass-panel" style={{ height: '220px', display: 'flex', flexDirection: 'column' }}>
@@ -325,8 +386,8 @@ function WorkspaceSiswa() {
             <div style={{ 
               padding: '16px 20px', flex: 1, overflowY: 'auto', 
               fontFamily: "'Fira Code', monospace", fontSize: '0.85rem', 
-              color: output.includes('⚠️') ? '#f59e0b'
-                : output.includes('Error') || output.includes('Tidak ❌') ? '#f87171' 
+              color: output.includes('PERINGATAN') ? '#f59e0b'
+                : output.includes('Error') || output.includes('Tidak') ? '#f87171' 
                 : '#a3e635', 
               whiteSpace: 'pre-wrap', background: 'rgba(0,0,0,0.4)' 
             }}>
@@ -345,7 +406,7 @@ function WorkspaceSiswa() {
               {/* ── Section: Rekomendasi Topik BKT ── */}
               <div className="glass-panel" style={{ padding: '30px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                  <span style={{ fontSize: '1.5rem' }}></span>
                   <div>
                     <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Rekomendasi Topik untuk Dikerjakan</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '4px 0 0 0' }}>
@@ -357,7 +418,7 @@ function WorkspaceSiswa() {
 
                 {rekomendasi.length === 0 ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '30px' }}>
-                    🎉 Semua topik sudah dikuasai atau belum ada soal yang tersedia!
+                    Semua topik sudah dikuasai atau belum ada soal yang tersedia!
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -387,7 +448,7 @@ function WorkspaceSiswa() {
                             <div>
                               <div style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '4px' }}>{item.nama_topik}</div>
                               {item.judul_soal && (
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📝 {item.judul_soal}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{item.judul_soal}</div>
                               )}
                             </div>
                             <span style={{
@@ -415,7 +476,7 @@ function WorkspaceSiswa() {
 
                           {/* Estimasi submit */}
                           <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>🔮</span>
+                            <span></span>
                             <span>
                               {item.estimasi_submit === 0
                                 ? 'Hampir dikuasai!'
@@ -437,7 +498,7 @@ function WorkspaceSiswa() {
                               onMouseEnter={e => e.currentTarget.style.background = `${urgencyColor}30`}
                               onMouseLeave={e => e.currentTarget.style.background = `${urgencyColor}15`}
                             >
-                              ▶ Langsung Kerjakan
+                              Langsung Kerjakan
                             </button>
                           )}
                         </div>
@@ -450,7 +511,7 @@ function WorkspaceSiswa() {
               {/* ── Section: BKT Chart + Tabel Prediksi ── */}
               <div className="glass-panel" style={{ padding: '30px' }}>
                 <h2 style={{ fontSize: '1.2rem', marginBottom: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                  📊 Tingkat Penguasaan Topik P(L)
+                  Tingkat Penguasaan Topik P(L)
                 </h2>
 
                 {bktStats.length === 0 ? (
@@ -478,7 +539,7 @@ function WorkspaceSiswa() {
                     {/* Tabel Prediksi Penguasaan per Topik */}
                     <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
                       <h3 style={{ fontSize: '0.95rem', marginBottom: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        🔮 Prediksi Penguasaan per Topik
+                        Prediksi Penguasaan per Topik
                       </h3>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
@@ -494,7 +555,7 @@ function WorkspaceSiswa() {
                             const p = stat.learned_prob;
                             const isDone = p >= 0.95;
                             const statusColor = isDone ? 'var(--success-color)' : p >= 0.7 ? '#f59e0b' : p >= 0.4 ? 'var(--accent-color)' : 'var(--danger-color)';
-                            const statusLabel = isDone ? '✅ Dikuasai' : p >= 0.7 ? '🔶 Hampir' : p >= 0.4 ? '🔵 Sedang Belajar' : '🔴 Perlu Fokus';
+                            const statusLabel = isDone ? 'Dikuasai' : p >= 0.7 ? 'Hampir' : p >= 0.4 ? 'Sedang Belajar' : 'Perlu Fokus';
                             return (
                               <tr key={stat.topik_id} style={{ borderBottom: '1px solid var(--glass-border)' }}
                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
@@ -526,7 +587,7 @@ function WorkspaceSiswa() {
               {/* Section: Riwayat Submit */}
               <div className="glass-panel" style={{ overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.1rem' }}>⏱️ Riwayat Submit Evaluasi</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Riwayat Submit Evaluasi</h2>
                 </div>
 
                 {history.length === 0 ? (

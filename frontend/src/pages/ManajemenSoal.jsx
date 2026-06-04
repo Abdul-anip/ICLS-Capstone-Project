@@ -220,17 +220,17 @@ function ManajemenSoal() {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={openTopikModal} className="btn" style={{ padding: '10px 20px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid var(--glass-border)' }}>
-              <span>📂</span> Kelola Topik
+              Kelola Topik
             </button>
             <button onClick={openAddModal} className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>➕</span> Tambah Soal Baru
+              Tambah Soal Baru
             </button>
           </div>
         </div>
 
         <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, fontSize: '1.2rem' }}>📚 Daftar Soal Anda</h2>
+            <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Daftar Soal Anda</h2>
             <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem' }}>
               Total: {soalList.length} Soal
             </span>
@@ -278,14 +278,14 @@ function ManajemenSoal() {
                           style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                           title="Edit Soal"
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(s.soal_id)}
                           style={{ background: 'rgba(248, 81, 73, 0.15)', border: 'none', color: 'var(--danger-color)', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
                           title="Hapus Soal"
                         >
-                          🗑️ Hapus
+                          Hapus
                         </button>
                       </div>
                     </div>
@@ -320,7 +320,7 @@ function ManajemenSoal() {
           <div className="glass-panel" style={{ width: '100%', maxWidth: '650px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '20px 30px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)' }}>
               <h2 style={{ fontSize: '1.25rem', margin: 0, color: isEditing ? 'var(--accent-color)' : 'white' }}>
-                {isEditing ? `✏️ Perbarui Soal #${editId}` : '📝 Buat Soal Baru'}
+                {isEditing ? `Perbarui Soal #${editId}` : 'Buat Soal Baru'}
               </h2>
               <button onClick={closeAddModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>
                 &times;
@@ -385,7 +385,7 @@ function ManajemenSoal() {
                 </div>
 
                 <div style={{ marginTop: '25px', marginBottom: '16px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🛠️</span> 
+                  
                   <h3 style={{ fontSize: '1rem', margin: 0 }}>Konfigurasi Test Case</h3>
                 </div>
 
@@ -439,7 +439,7 @@ function ManajemenSoal() {
             
             {/* Header */}
             <div style={{ padding: '20px 30px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)' }}>
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>📂 Kelola Topik Materi</h2>
+              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Kelola Topik Materi</h2>
               <button onClick={closeTopikModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1 }}>
                 &times;
               </button>
@@ -455,13 +455,13 @@ function ManajemenSoal() {
                   color: topikMessageType === 'error' ? 'var(--danger-color)' : 'var(--success-color)',
                   border: `1px solid ${topikMessageType === 'error' ? 'rgba(248, 81, 73, 0.3)' : 'rgba(63, 185, 80, 0.3)'}`
                 }}>
-                  {topikMessageType === 'error' ? '⚠️' : '✅'} {topikMessage}
+                  {topikMessage}
                 </div>
               )}
 
               {/* Form Tambah Topik Baru */}
               <form onSubmit={handleTambahTopik} style={{ marginBottom: '28px' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: '16px', color: 'var(--accent-color)' }}>➕ Tambah Topik Baru</h3>
+                <h3 style={{ fontSize: '1rem', marginBottom: '16px', color: 'var(--accent-color)' }}>Tambah Topik Baru</h3>
                 <div className="input-group" style={{ marginBottom: '12px' }}>
                   <label className="input-label">Nama Topik <span style={{ color: 'var(--danger-color)' }}>*</span></label>
                   <input 
@@ -492,7 +492,7 @@ function ManajemenSoal() {
               <div style={{ borderBottom: '1px solid var(--glass-border)', marginBottom: '24px' }} />
 
               {/* Daftar Topik */}
-              <h3 style={{ fontSize: '1rem', marginBottom: '16px' }}>📋 Daftar Topik Terdaftar ({topikList.length})</h3>
+              <h3 style={{ fontSize: '1rem', marginBottom: '16px' }}>Daftar Topik Terdaftar ({topikList.length})</h3>
               
               {topikList.length === 0 ? (
                 <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
@@ -542,7 +542,7 @@ function ManajemenSoal() {
                             transition: 'all 0.2s'
                           }}
                         >
-                          🗑️ Hapus
+                          Hapus
                         </button>
                       </div>
                     );

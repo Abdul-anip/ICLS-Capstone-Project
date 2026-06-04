@@ -157,7 +157,7 @@ function DashboardDosen() {
           return (
             <div className="glass-panel" style={{ padding: '28px', marginBottom: '36px', borderLeft: '3px solid var(--danger-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '1.4rem' }}>📌</span>
+                <span style={{ fontSize: '1.4rem' }}></span>
                 <div>
                   <h2 style={{ fontSize: '1.1rem', margin: 0, color: 'var(--danger-color)' }}>
                     Rekomendasi Tindakan — {siswaPerhatian.length} Siswa Perlu Bimbingan
@@ -175,7 +175,7 @@ function DashboardDosen() {
                     background: 'rgba(248, 81, 73, 0.08)', border: '1px solid rgba(248,81,73,0.25)',
                     display: 'flex', alignItems: 'center', gap: '10px'
                   }}>
-                    <span style={{ fontSize: '1.1rem' }}>👤</span>
+                    <span style={{ fontSize: '1.1rem' }}></span>
                     <div>
                       <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{s.nama_lengkap}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -191,7 +191,7 @@ function DashboardDosen() {
 
         {/* ── BKT Class Analytics Chart ── */}
         <div className="glass-panel" style={{ padding: '30px', marginBottom: '36px' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>📈 Rata-rata P(L) Kelas per Topik</h2>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Rata-rata P(L) Kelas per Topik</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '24px' }}>
             Analisis tingkat pemahaman agregat seluruh siswa berdasarkan topik. Fokuskan materi pada topik dengan persentase rendah (merah/kuning).
           </p>
@@ -241,11 +241,11 @@ function DashboardDosen() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap', gap: '12px'
           }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>📊 Performa & Progress Siswa</h2>
+            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Performa & Progress Siswa</h2>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 className="input-field"
-                placeholder="🔍 Cari nama / username..."
+                placeholder="Cari nama / username..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{ width: '210px', padding: '8px 14px', fontSize: '0.875rem' }}
@@ -266,7 +266,7 @@ function DashboardDosen() {
                 onClick={() => { fetchStats(); fetchSiswaProgress(); }}
                 style={{ padding: '8px 16px', fontSize: '0.875rem' }}
               >
-                🔄 Refresh
+                Refresh
               </button>
             </div>
           </div>
@@ -311,7 +311,7 @@ function DashboardDosen() {
                               borderRadius: '20px', background: 'rgba(248, 81, 73, 0.15)',
                               color: 'var(--danger-color)', border: '1px solid rgba(248,81,73,0.3)',
                               cursor: 'help', whiteSpace: 'nowrap'
-                            }}>⚠️ Perhatian</span>
+                            }}>Perhatian</span>
                           )}
                           {siswa.nama_lengkap}
                         </div>

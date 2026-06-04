@@ -139,7 +139,7 @@ function ProfilAkun() {
           {/* Card: Informasi Profil */}
           <div className="glass-panel" style={{ padding: '28px' }}>
             <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              👤 Informasi Dasar
+              Informasi Dasar
             </h2>
             
             {statusProfil.msg && (
@@ -189,7 +189,7 @@ function ProfilAkun() {
           {/* Card: Ubah Kata Sandi */}
           <div className="glass-panel" style={{ padding: '28px' }}>
             <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🔒 Keamanan Akun
+              Keamanan Akun
             </h2>
 
             {statusSandi.msg && (

@@ -35,7 +35,7 @@ function ModalTambahInstansi({ onClose, onSuccess, adminId }) {
     }}>
       <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '36px', margin: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>➕ Tambah Instansi Baru</h2>
+          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Tambah Instansi Baru</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
         </div>
 
@@ -110,7 +110,7 @@ function ModalTambahDosenInstansi({ onClose, onSuccess, adminId, instansi }) {
     }}>
       <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '36px', margin: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>👨‍🏫 Buat Dosen Pertama</h2>
+          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Buat Dosen Pertama</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
         </div>
 
@@ -197,14 +197,14 @@ function AdminDashboard() {
   const handleInstansiAdded = (newInstansi) => {
     setInstansiList(prev => [...prev, newInstansi]);
     setShowModal(false);
-    setNotification(`✅ Instansi "${newInstansi.nama_instansi}" berhasil ditambahkan!`);
+    setNotification(`Instansi "${newInstansi.nama_instansi}" berhasil ditambahkan!`);
     setTimeout(() => setNotification(''), 4000);
   };
 
   const handleDosenAdded = (newDosen) => {
     setShowDosenModal(false);
     setTargetInstansi(null);
-    setNotification(`✅ Dosen "${newDosen.nama_lengkap}" berhasil ditambahkan ke instansi!`);
+    setNotification(`Dosen "${newDosen.nama_lengkap}" berhasil ditambahkan ke instansi!`);
     setTimeout(() => setNotification(''), 4000);
   };
 
@@ -228,7 +228,7 @@ function AdminDashboard() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
           }}>
-            <span style={{ fontSize: '16px' }}>⚡</span>
+            <span style={{ fontSize: '16px' }}></span>
           </div>
           <div>
             <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>ICLS Admin Panel</div>
@@ -250,7 +250,7 @@ function AdminDashboard() {
 
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>⚡ Admin Dashboard</h1>
+          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Admin Dashboard</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Kelola seluruh instansi yang terdaftar di platform ICLS</p>
         </div>
 
@@ -292,11 +292,11 @@ function AdminDashboard() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             padding: '20px 24px', borderBottom: '1px solid var(--glass-border)'
           }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>🏫 Daftar Instansi Terdaftar</h2>
+            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Daftar Instansi Terdaftar</h2>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <input
                 className="input-field"
-                placeholder="🔍 Cari instansi..."
+                placeholder="Cari instansi..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{ width: '220px', padding: '8px 14px', fontSize: '0.875rem' }}

@@ -37,7 +37,7 @@ function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
       <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '460px', padding: '36px', margin: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>➕ Tambah Akun Dosen</h2>
+          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Tambah Akun Dosen</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
         </div>
 
@@ -71,7 +71,7 @@ function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
             </div>
           </div>
           <div style={{ background: 'rgba(31,111,235,0.1)', border: '1px solid rgba(31,111,235,0.3)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.8rem', color: 'var(--accent-color)' }}>
-            ℹ️ Akun dosen baru akan otomatis terdaftar di instansi <strong>{JSON.parse(localStorage.getItem('user') || '{}')?.nama_instansi}</strong>.
+            Akun dosen baru akan otomatis terdaftar di instansi <strong>{JSON.parse(localStorage.getItem('user') || '{}')?.nama_instansi}</strong>.
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }} disabled={isLoading}>Batal</button>
@@ -129,7 +129,7 @@ function ManajemenAkun() {
   const handleDosenAdded = (newDosen) => {
     setDosenList(prev => [...prev, newDosen]);
     setShowModal(false);
-    setNotification(`✅ Akun dosen "${newDosen.nama_lengkap}" berhasil dibuat!`);
+    setNotification(`Akun dosen "${newDosen.nama_lengkap}" berhasil dibuat!`);
     setTimeout(() => setNotification(''), 4000);
   };
 
@@ -157,7 +157,7 @@ function ManajemenAkun() {
 
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>
-          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>👥 Manajemen Akun</h1>
+          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Manajemen Akun</h1>
           <p style={{ color: 'var(--text-secondary)' }}>
             Kelola akun siswa dan dosen di <strong>{user?.nama_instansi}</strong>
           </p>
@@ -177,10 +177,10 @@ function ManajemenAkun() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', padding: '0 8px' }}>
             <div style={{ display: 'flex' }}>
               <button style={tabStyle('siswa')} onClick={() => setActiveTab('siswa')}>
-                🎓 Daftar Siswa ({siswaList.length})
+                Daftar Siswa ({siswaList.length})
               </button>
               <button style={tabStyle('dosen')} onClick={() => setActiveTab('dosen')}>
-                👨‍🏫 Daftar Dosen ({dosenList.length})
+                Daftar Dosen ({dosenList.length})
               </button>
             </div>
 
@@ -199,7 +199,7 @@ function ManajemenAkun() {
               <div style={{ display: 'flex', gap: '10px', padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
                 <input
                   className="input-field"
-                  placeholder="🔍 Cari nama / username..."
+                  placeholder="Cari nama / username..."
                   value={searchSiswa}
                   onChange={e => setSearchSiswa(e.target.value)}
                   style={{ flex: 1, minWidth: '200px', padding: '8px 14px', fontSize: '0.875rem' }}
@@ -211,7 +211,7 @@ function ManajemenAkun() {
                     {kelasList.map(k => <option key={k} value={k}>{k}</option>)}
                   </select>
                 )}
-                <button className="btn btn-secondary" onClick={fetchSiswa} style={{ padding: '8px 16px', fontSize: '0.875rem' }}>🔄</button>
+                <button className="btn btn-secondary" onClick={fetchSiswa} style={{ padding: '8px 16px', fontSize: '0.875rem' }}>Refresh</button>
               </div>
 
               {isLoadingSiswa ? (
