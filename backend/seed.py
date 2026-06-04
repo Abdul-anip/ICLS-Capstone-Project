@@ -97,6 +97,7 @@ def seed_data():
     soal = models.Soal(
         topik_id=topik.topik_id,
         dosen_id=dosen_a.user_id,
+        judul_soal="Fungsi Pengecek Bilangan Genap",
         deskripsi_soal="Buat fungsi is_even(num) yang mengembalikan True jika genap, False jika ganjil.",
         tingkat_kesulitan="Mudah"
     )

@@ -23,6 +23,42 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
     expected_output = testcase.expected_output if testcase else ""
     input_data = testcase.input_data if testcase else ""
 
+    # ─── DETEKSI KODE DUPLIKAT ───────────────────────────────────────────────
+    # Cek apakah submit terakhir untuk soal ini dari siswa yang sama
+    # memiliki source_code yang IDENTIK. Jika ya, tolak update BKT.
+    last_eval = (
+        db.query(models.Evaluasi)
+        .filter(
+            models.Evaluasi.siswa_id == submission.siswa_id,
+            models.Evaluasi.soal_id == submission.soal_id,
+        )
+        .order_by(models.Evaluasi.timestamp.desc())
+        .first()
+    )
+
+    is_duplicate = (
+        last_eval is not None
+        and last_eval.source_code.strip() == submission.source_code.strip()
+    )
+
+    if is_duplicate:
+        # Kembalikan hasil submit sebelumnya TANPA menjalankan ulang Judge0
+        # dan TANPA mengupdate state BKT — mencegah exploit P(L)
+        bkt_record = db.query(models.BKTHistory).filter(
+            models.BKTHistory.siswa_id == submission.siswa_id,
+            models.BKTHistory.topik_id == soal.topik_id
+        ).first()
+        current_prob = bkt_record.learned_prob if bkt_record else 0.1
+
+        return schemas.CodeEvaluationResponse(
+            status_compile=last_eval.status_compile,
+            is_correct=bool(last_eval.binary_result),
+            output="[Kode identik dengan submit sebelumnya — BKT tidak diperbarui]",
+            new_knowledge_state=current_prob,
+            is_duplicate=True
+        )
+    # ─────────────────────────────────────────────────────────────────────────
+
     # 2. Panggil Judge0 API (Service)
     judge_result = evaluate_code(
         source_code=submission.source_code,
@@ -80,8 +116,10 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
         status_compile=status_compile,
         is_correct=is_correct,
         output=judge_result["output"],
-        new_knowledge_state=new_knowledge_prob
+        new_knowledge_state=new_knowledge_prob,
+        is_duplicate=False
     )
+
 
 @router.get("/history/{user_id}", response_model=list[schemas.EvaluasiHistoryResponse])
 def get_evaluasi_history(user_id: int, db: Session = Depends(get_db)):
@@ -98,7 +136,7 @@ def get_evaluasi_history(user_id: int, db: Session = Depends(get_db)):
         result.append(schemas.EvaluasiHistoryResponse(
             evaluasi_id=r.evaluasi_id,
             soal_id=r.soal_id,
-            deskripsi_soal=soal.deskripsi_soal[:50] + "..." if soal else "Unknown",
+            deskripsi_soal=(soal.judul_soal if soal.judul_soal else (soal.deskripsi_soal[:50] + "...")) if soal else "Unknown",
             status_compile=r.status_compile,
             binary_result=r.binary_result,
             timestamp=r.timestamp

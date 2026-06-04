@@ -150,6 +150,45 @@ function DashboardDosen() {
           </div>
         </div>
 
+        {/* ── Rekomendasi Tindakan Dosen ── */}
+        {(() => {
+          const siswaPerhatian = siswaProgress.filter(s => s.perlu_perhatian);
+          if (siswaPerhatian.length === 0) return null;
+          return (
+            <div className="glass-panel" style={{ padding: '28px', marginBottom: '36px', borderLeft: '3px solid var(--danger-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '1.4rem' }}>📌</span>
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', margin: 0, color: 'var(--danger-color)' }}>
+                    Rekomendasi Tindakan — {siswaPerhatian.length} Siswa Perlu Bimbingan
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '4px 0 0 0' }}>
+                    Siswa berikut memiliki setidaknya 1 topik dengan tingkat penguasaan P(L) di bawah 40%.
+                    Pertimbangkan untuk memberikan sesi remedial atau materi tambahan.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {siswaPerhatian.map(s => (
+                  <div key={s.user_id} style={{
+                    padding: '10px 16px', borderRadius: '8px',
+                    background: 'rgba(248, 81, 73, 0.08)', border: '1px solid rgba(248,81,73,0.25)',
+                    display: 'flex', alignItems: 'center', gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '1.1rem' }}>👤</span>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{s.nama_lengkap}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {s.nama_kelas || 'Tanpa Kelas'} • P(L) rata-rata: {(s.avg_bkt * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── BKT Class Analytics Chart ── */}
         <div className="glass-panel" style={{ padding: '30px', marginBottom: '36px' }}>
           <h2 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>📈 Rata-rata P(L) Kelas per Topik</h2>
@@ -265,7 +304,17 @@ function DashboardDosen() {
                     >
                       <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{i + 1}</td>
                       <td style={{ padding: '16px 20px' }}>
-                        <div style={{ fontWeight: '600' }}>{siswa.nama_lengkap}</div>
+                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {siswa.perlu_perhatian && (
+                            <span title="Siswa ini memiliki topik dengan P(L) di bawah 40% — perlu bimbingan ekstra" style={{
+                              fontSize: '0.7rem', fontWeight: 'bold', padding: '2px 8px',
+                              borderRadius: '20px', background: 'rgba(248, 81, 73, 0.15)',
+                              color: 'var(--danger-color)', border: '1px solid rgba(248,81,73,0.3)',
+                              cursor: 'help', whiteSpace: 'nowrap'
+                            }}>⚠️ Perhatian</span>
+                          )}
+                          {siswa.nama_lengkap}
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@{siswa.username}</div>
                       </td>
                       <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>

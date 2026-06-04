@@ -9,6 +9,7 @@ function ManajemenSoal() {
   const [topikList, setTopikList] = useState([]);
   
   // State form soal
+  const [judul, setJudul] = useState('');
   const [soal, setSoal] = useState('');
   const [topikId, setTopikId] = useState('');
   const [kesulitan, setKesulitan] = useState('Mudah');
@@ -70,6 +71,7 @@ function ManajemenSoal() {
   };
 
   const resetForm = () => {
+    setJudul('');
     setSoal('');
     setTopikId(topikList.length > 0 ? topikList[0].topik_id : '');
     setKesulitan('Mudah');
@@ -87,6 +89,7 @@ function ManajemenSoal() {
     const payload = {
       topik_id: parseInt(topikId),
       dosen_id: user.user_id,
+      judul_soal: judul,
       deskripsi_soal: soal,
       tingkat_kesulitan: kesulitan,
       testcases: [
@@ -117,6 +120,7 @@ function ManajemenSoal() {
     setEditId(s.soal_id);
     setTopikId(s.topik_id);
     setKesulitan(s.tingkat_kesulitan);
+    setJudul(s.judul_soal || '');
     setSoal(s.deskripsi_soal);
     
     if (s.testcases && s.testcases.length > 0) {
@@ -252,7 +256,9 @@ function ManajemenSoal() {
                       <div>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
                           <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>ID: {s.soal_id}</span>
-                          <span style={{ background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px' }}>Topik {s.topik_id}</span>
+                          <span style={{ background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px' }}>
+                            {topikList.find(t => t.topik_id === s.topik_id)?.nama_topik || `Topik ${s.topik_id}`}
+                          </span>
                           <span style={{ 
                             fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px',
                             background: s.tingkat_kesulitan === 'Mudah' ? 'rgba(63, 185, 80, 0.2)' : s.tingkat_kesulitan === 'Sedang' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(248, 81, 73, 0.2)',
@@ -262,6 +268,9 @@ function ManajemenSoal() {
                             {s.tingkat_kesulitan}
                           </span>
                         </div>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: '8px 0 0 0', color: 'white' }}>
+                          {s.judul_soal || 'Tanpa Judul'}
+                        </h3>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button 
@@ -351,7 +360,20 @@ function ManajemenSoal() {
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label">Deskripsi Soal / Instruksi</label>
+                  <label className="input-label">Judul Soal <span style={{ color: 'var(--danger-color)' }}>*</span></label>
+                  <input 
+                    className="input-field" 
+                    type="text"
+                    value={judul} 
+                    onChange={e => setJudul(e.target.value)} 
+                    placeholder="Contoh: Fungsi Pengecek Bilangan Genap"
+                    required
+                    style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Deskripsi Soal / Instruksi <span style={{ color: 'var(--danger-color)' }}>*</span></label>
                   <textarea 
                     className="input-field" 
                     rows="5" 

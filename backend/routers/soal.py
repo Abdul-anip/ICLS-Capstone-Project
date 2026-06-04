@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+from services.bkt_service import predict_mastery_attempts, get_recommendation_score
 
 router = APIRouter(
     prefix="/api/soal",
@@ -24,6 +25,7 @@ def create_soal_with_testcase(payload: schemas.SoalWithTestCaseCreate, db: Sessi
     db_soal = models.Soal(
         topik_id=payload.topik_id,
         dosen_id=payload.dosen_id,
+        judul_soal=payload.judul_soal,
         deskripsi_soal=payload.deskripsi_soal,
         tingkat_kesulitan=payload.tingkat_kesulitan
     )
@@ -107,6 +109,7 @@ def get_all_soal(db: Session = Depends(get_db)):
         result.append({
             "soal_id": s.soal_id,
             "topik_id": s.topik_id,
+            "judul_soal": s.judul_soal,
             "deskripsi_soal": s.deskripsi_soal,
             "tingkat_kesulitan": s.tingkat_kesulitan,
             "testcases": testcases
@@ -121,6 +124,7 @@ def update_soal(soal_id: int, payload: schemas.SoalWithTestCaseUpdate, db: Sessi
     
     # Update atribut soal
     soal.topik_id = payload.topik_id
+    soal.judul_soal = payload.judul_soal
     soal.deskripsi_soal = payload.deskripsi_soal
     soal.tingkat_kesulitan = payload.tingkat_kesulitan
     
@@ -193,6 +197,7 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
             "soal_id": s.soal_id,
             "topik_id": s.topik_id,
             "nama_topik": nama_topik,
+            "judul_soal": s.judul_soal,
             "deskripsi_soal": s.deskripsi_soal,
             "tingkat_kesulitan": s.tingkat_kesulitan,
             "learned_prob": learned_prob
@@ -231,3 +236,83 @@ def get_bkt_stats(user_id: int, db: Session = Depends(get_db)):
         ))
 
     return result
+
+
+@router.get("/siswa/{user_id}/rekomendasi")
+def get_rekomendasi_topik(user_id: int, db: Session = Depends(get_db)):
+    """
+    Mengambil rekomendasi TOP-3 topik yang paling mendesak untuk dikerjakan siswa
+    berdasarkan nilai BKT saat ini, beserta prediksi submit benar untuk menguasai topik.
+    """
+    siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
+
+    # Ambil semua dosen di instansi yang sama
+    dosen_instansi = db.query(models.User.user_id).filter(
+        models.User.instansi_id == siswa.instansi_id,
+        models.User.role == 'dosen'
+    ).subquery()
+
+    # Ambil semua topik yang ada soalnya dari dosen instansi ini
+    soal_instansi = db.query(models.Soal.topik_id).filter(
+        models.Soal.dosen_id.in_(dosen_instansi)
+    ).distinct().all()
+    topik_ids = [s.topik_id for s in soal_instansi]
+
+    kandidat = []
+    for t_id in topik_ids:
+        topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == t_id).first()
+        if not topik:
+            continue
+
+        # Ambil BKT state siswa untuk topik ini
+        bkt_record = db.query(models.BKTHistory).filter(
+            models.BKTHistory.siswa_id == user_id,
+            models.BKTHistory.topik_id == t_id
+        ).first()
+        learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+
+        # Lewati topik yang sudah dikuasai (P(L) >= 0.95)
+        if learned_prob >= 0.95:
+            continue
+
+        # Cari soal dari topik ini (ambil soal pertama untuk tombol "Langsung Kerjakan")
+        soal_tersedia = db.query(models.Soal).filter(
+            models.Soal.topik_id == t_id,
+            models.Soal.dosen_id.in_(dosen_instansi)
+        ).first()
+
+        # Tentukan tingkat kesulitan yang paling dominan di topik ini
+        soal_list = db.query(models.Soal).filter(
+            models.Soal.topik_id == t_id,
+            models.Soal.dosen_id.in_(dosen_instansi)
+        ).all()
+
+        # Hitung tingkat kesulitan dominan
+        tingkat_counts = {"Mudah": 0, "Sedang": 0, "Sulit": 0}
+        for s in soal_list:
+            if s.tingkat_kesulitan in tingkat_counts:
+                tingkat_counts[s.tingkat_kesulitan] += 1
+        tingkat_dominan = max(tingkat_counts, key=tingkat_counts.get)
+
+        # Prediksi berapa submit benar diperlukan untuk menguasai topik
+        estimasi_submit = predict_mastery_attempts(learned_prob, tingkat_dominan)
+
+        # Hitung skor rekomendasi
+        skor = get_recommendation_score(learned_prob)
+
+        kandidat.append({
+            "topik_id": t_id,
+            "nama_topik": topik.nama_topik,
+            "learned_prob": round(learned_prob, 4),
+            "skor_rekomendasi": skor,
+            "estimasi_submit": estimasi_submit,
+            "tingkat_kesulitan_dominan": tingkat_dominan,
+            "soal_id": soal_tersedia.soal_id if soal_tersedia else None,
+            "judul_soal": soal_tersedia.judul_soal if soal_tersedia else None,
+        })
+
+    # Urutkan berdasarkan skor rekomendasi tertinggi, ambil top 3
+    kandidat.sort(key=lambda x: x["skor_rekomendasi"], reverse=True)
+    return kandidat[:3]

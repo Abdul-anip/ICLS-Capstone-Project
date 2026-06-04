@@ -192,6 +192,9 @@ def get_siswa_progress(requestor_id: int, db: Session = Depends(get_db)):
             models.Evaluasi.siswa_id == siswa.user_id
         ).count()
 
+        # Cek apakah ada topik yang P(L) < 0.4 (indikator siswa perlu perhatian ekstra)
+        perlu_perhatian = any(r.learned_prob < 0.4 for r in bkt_records) if bkt_records else False
+
         result.append({
             "user_id": siswa.user_id,
             "nama_lengkap": siswa.nama_lengkap,
@@ -200,6 +203,7 @@ def get_siswa_progress(requestor_id: int, db: Session = Depends(get_db)):
             "avg_bkt": round(avg_bkt, 4),
             "topik_terakhir": topik_terakhir,
             "jumlah_submit": jumlah_submit,
+            "perlu_perhatian": perlu_perhatian,
         })
 
     return result

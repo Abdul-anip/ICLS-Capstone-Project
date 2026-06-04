@@ -66,6 +66,7 @@ class Soal(Base):
     soal_id = Column(Integer, primary_key=True, index=True)
     topik_id = Column(Integer, ForeignKey("tb_topik_materi.topik_id"))
     dosen_id = Column(Integer, ForeignKey("tb_user.user_id"))
+    judul_soal = Column(String(200), nullable=True) # Tambah kolom judul soal
     deskripsi_soal = Column(Text)
     tingkat_kesulitan = Column(Enum(KesulitanEnum))
 

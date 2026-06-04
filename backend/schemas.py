@@ -108,6 +108,7 @@ class UserListResponse(BaseModel):
 # ─────────────────────────────────────────
 
 class SoalBase(BaseModel):
+    judul_soal: Optional[str] = None
     deskripsi_soal: str
     tingkat_kesulitan: str
 
@@ -130,15 +131,18 @@ class TestCaseCreate(BaseModel):
 class SoalWithTestCaseCreate(BaseModel):
     topik_id: int
     dosen_id: int
+    judul_soal: Optional[str] = None
     deskripsi_soal: str
     tingkat_kesulitan: str
     testcases: List[TestCaseCreate]
 
 class SoalWithTestCaseUpdate(BaseModel):
     topik_id: int
+    judul_soal: Optional[str] = None
     deskripsi_soal: str
     tingkat_kesulitan: str
     testcases: List[TestCaseCreate]
+
 
 
 # ─────────────────────────────────────────
@@ -156,6 +160,7 @@ class CodeEvaluationResponse(BaseModel):
     is_correct: bool
     output: str
     new_knowledge_state: float
+    is_duplicate: bool = False
 
 class BKTStatsResponse(BaseModel):
     topik_id: int
