@@ -118,18 +118,18 @@ function ProfilAkun() {
         {/* Header Profil */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '36px' }}>
           <div style={{
-            width: '80px', height: '80px', borderRadius: '50%',
-            background: 'linear-gradient(135deg, #1F6FEB 0%, #58A6FF 100%)',
+            width: '80px', height: '80px', borderRadius: '4px',
+            background: 'var(--accent-color)', border: '2.5px solid #000000',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem', fontWeight: 'bold', color: 'white',
-            boxShadow: '0 0 20px rgba(88, 166, 255, 0.4)'
+            fontSize: '2rem', fontWeight: '900', color: '#000000',
+            boxShadow: '4px 4px 0px #000000'
           }}>
             {user.nama_lengkap.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Profil Akun</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Kelola informasi pribadi dan keamanan akun Anda di {user.nama_instansi}
+            <h1 style={{ fontSize: '2.2rem', marginBottom: '4px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Profil Akun</h1>
+            <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
+              Kelola informasi pribadi dan keamanan akun Anda di <strong style={{ color: '#FFFFFF' }}>{user.nama_instansi}</strong>
             </p>
           </div>
         </div>
@@ -137,17 +137,17 @@ function ProfilAkun() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
           
           {/* Card: Informasi Profil */}
-          <div className="glass-panel" style={{ padding: '28px' }}>
-            <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="glass-panel" style={{ padding: '28px', background: 'var(--bg-card)', border: '2.5px solid #000000', boxShadow: 'var(--brutal-shadow)', borderRadius: '4px' }}>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>
               Informasi Dasar
             </h2>
             
             {statusProfil.msg && (
               <div style={{ 
-                background: statusProfil.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.15)', 
-                border: `1px solid ${statusProfil.type === 'success' ? 'rgba(34,197,94,0.4)' : 'rgba(220,38,38,0.4)'}`, 
-                borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', 
-                color: statusProfil.type === 'success' ? '#4ade80' : '#f87171', fontSize: '0.875rem' 
+                background: statusProfil.type === 'success' ? 'var(--success-color)' : 'var(--danger-color)', 
+                border: '2px solid #000000', 
+                borderRadius: '4px', padding: '10px 14px', marginBottom: '16px', 
+                color: '#000000', fontWeight: '700', fontSize: '0.875rem', boxShadow: '2px 2px 0px #000000' 
               }}>
                 {statusProfil.msg}
               </div>
@@ -187,17 +187,17 @@ function ProfilAkun() {
           </div>
 
           {/* Card: Ubah Kata Sandi */}
-          <div className="glass-panel" style={{ padding: '28px' }}>
-            <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="glass-panel" style={{ padding: '28px', background: 'var(--bg-card)', border: '2.5px solid #000000', boxShadow: 'var(--brutal-shadow)', borderRadius: '4px' }}>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>
               Keamanan Akun
             </h2>
 
             {statusSandi.msg && (
               <div style={{ 
-                background: statusSandi.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(220,38,38,0.15)', 
-                border: `1px solid ${statusSandi.type === 'success' ? 'rgba(34,197,94,0.4)' : 'rgba(220,38,38,0.4)'}`, 
-                borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', 
-                color: statusSandi.type === 'success' ? '#4ade80' : '#f87171', fontSize: '0.875rem' 
+                background: statusSandi.type === 'success' ? 'var(--success-color)' : 'var(--danger-color)', 
+                border: '2px solid #000000', 
+                borderRadius: '4px', padding: '10px 14px', marginBottom: '16px', 
+                color: '#000000', fontWeight: '700', fontSize: '0.875rem', boxShadow: '2px 2px 0px #000000' 
               }}>
                 {statusSandi.msg}
               </div>

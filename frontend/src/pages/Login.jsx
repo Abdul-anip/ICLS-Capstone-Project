@@ -53,19 +53,21 @@ function Login() {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
       <div className="glass-panel animate-fade-in" style={{ maxWidth: '400px', width: '100%', padding: '40px' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>ICLS Platform</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Intelligent Coding Learning System</p>
+          <h2 style={{ fontSize: '2rem', marginBottom: '8px', textTransform: 'uppercase' }}>ICLS Platform</h2>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Intelligent Coding Learning System</p>
         </div>
 
         {/* Tampilkan pesan error jika ada */}
         {error && (
           <div style={{
-            backgroundColor: 'rgba(220, 38, 38, 0.15)',
-            border: '1px solid rgba(220, 38, 38, 0.4)',
-            borderRadius: '8px',
+            backgroundColor: 'var(--danger-color)',
+            color: '#000000',
+            border: '2px solid #000000',
+            boxShadow: '2px 2px 0px #000000',
+            borderRadius: '4px',
             padding: '12px 16px',
             marginBottom: '20px',
-            color: '#f87171',
+            fontWeight: '700',
             fontSize: '0.875rem',
             textAlign: 'center'
           }}>
@@ -113,14 +115,14 @@ function Login() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '25px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           Belum punya akun?{' '}
-          <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: '600' }}>
+          <Link to="/register" style={{ color: 'var(--accent-color)', textDecoration: 'underline', fontWeight: '700' }}>
             Daftar sebagai Siswa
           </Link>
         </p>
 
-        <p style={{ textAlign: 'center', marginTop: '8px', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '12px', color: 'var(--text-secondary)', fontSize: '0.78rem', border: '1.5px dashed var(--text-secondary)', padding: '6px', borderRadius: '4px' }}>
           Demo: gunakan <strong>siswa_hanif</strong> / <strong>dosen_budi</strong> dengan sandi <strong>123</strong>
         </p>
       </div>

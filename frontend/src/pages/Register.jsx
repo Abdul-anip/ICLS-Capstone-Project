@@ -66,18 +66,20 @@ function Register() {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
       <div className="glass-panel animate-fade-in" style={{ maxWidth: '460px', width: '100%', padding: '40px' }}>
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Daftar Akun Siswa</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Buat akun untuk mulai belajar di ICLS Platform</p>
+          <h2 style={{ fontSize: '2rem', marginBottom: '8px', textTransform: 'uppercase' }}>Daftar Akun Siswa</h2>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Buat akun untuk mulai belajar di ICLS Platform</p>
         </div>
 
         {error && (
           <div style={{
-            backgroundColor: 'rgba(220, 38, 38, 0.15)',
-            border: '1px solid rgba(220, 38, 38, 0.4)',
-            borderRadius: '8px',
+            backgroundColor: 'var(--danger-color)',
+            color: '#000000',
+            border: '2px solid #000000',
+            boxShadow: '2px 2px 0px #000000',
+            borderRadius: '4px',
             padding: '12px 16px',
             marginBottom: '20px',
-            color: '#f87171',
+            fontWeight: '700',
             fontSize: '0.875rem',
             textAlign: 'center'
           }}>
@@ -87,12 +89,14 @@ function Register() {
 
         {success && (
           <div style={{
-            backgroundColor: 'rgba(34, 197, 94, 0.15)',
-            border: '1px solid rgba(34, 197, 94, 0.4)',
-            borderRadius: '8px',
+            backgroundColor: 'var(--success-color)',
+            color: '#000000',
+            border: '2px solid #000000',
+            boxShadow: '2px 2px 0px #000000',
+            borderRadius: '4px',
             padding: '12px 16px',
             marginBottom: '20px',
-            color: '#4ade80',
+            fontWeight: '700',
             fontSize: '0.875rem',
             textAlign: 'center'
           }}>
@@ -206,9 +210,9 @@ function Register() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '25px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           Sudah punya akun?{' '}
-          <Link to="/login" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: '600' }}>
+          <Link to="/login" style={{ color: 'var(--accent-color)', textDecoration: 'underline', fontWeight: '700' }}>
             Masuk di sini
           </Link>
         </p>

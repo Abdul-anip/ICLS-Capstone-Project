@@ -7,10 +7,10 @@ const API = 'http://127.0.0.1:8000';
 
 // ── Helper: status label berdasarkan nilai BKT ────────────────────────────────
 function getBktStatus(prob) {
-  if (prob >= 0.95) return { label: 'Dikuasai', color: 'var(--success-color)', bg: 'rgba(63, 185, 80, 0.15)' };
-  if (prob >= 0.7)  return { label: 'Hampir Dikuasai', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' };
-  if (prob >= 0.4)  return { label: 'Sedang Belajar', color: 'var(--accent-color)', bg: 'rgba(31, 111, 235, 0.15)' };
-  return { label: 'Perlu Perhatian', color: 'var(--danger-color)', bg: 'rgba(248, 81, 73, 0.15)' };
+  if (prob >= 0.95) return { label: 'Dikuasai', color: 'var(--success-color)', badgeClass: 'success' };
+  if (prob >= 0.7)  return { label: 'Hampir', color: 'var(--accent-color)', badgeClass: 'yellow' };
+  if (prob >= 0.4)  return { label: 'Belajar', color: 'var(--accent-blue)', badgeClass: 'blue' };
+  return { label: 'Fokus', color: 'var(--danger-color)', badgeClass: 'danger' };
 }
 
 function DashboardDosen() {
@@ -77,8 +77,8 @@ function DashboardDosen() {
 
         {/* ── Header ── */}
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Dashboard Instruktur</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
+          <h1 style={{ fontSize: '2.2rem', marginBottom: '4px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Dashboard Instruktur</h1>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
             {user?.nama_instansi || 'Instansi'} — Pantau perkembangan siswa & analisis BKT secara real-time
           </p>
         </div>
@@ -88,65 +88,65 @@ function DashboardDosen() {
 
           {/* Rata-rata BKT Kelas */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '800' }}>
               Rata-rata P(L) Kelas
             </div>
             {isLoadingStats ? (
               <div style={{ fontSize: '2rem', color: 'var(--text-secondary)' }}>—</div>
             ) : (
               <>
-                <div style={{ fontSize: '2.8rem', fontWeight: 'bold', color: avgBktDisplay >= 70 ? 'var(--success-color)' : 'var(--accent-color)' }}>
+                <div style={{ fontSize: '2.8rem', fontWeight: '800', color: avgBktDisplay >= 70 ? 'var(--success-color)' : 'var(--accent-color)' }}>
                   {avgBktDisplay}%
                 </div>
-                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: '14px' }}>
-                  <div style={{ width: `${avgBktDisplay}%`, height: '100%', borderRadius: '3px', background: avgBktDisplay >= 70 ? 'var(--success-color)' : 'var(--accent-color)', transition: 'width 1s ease' }}></div>
+                <div style={{ width: '100%', height: '12px', background: '#000000', border: '1.5px solid #000000', borderRadius: '3px', marginTop: '14px', overflow: 'hidden' }}>
+                  <div style={{ width: `${avgBktDisplay}%`, height: '100%', background: avgBktDisplay >= 70 ? 'var(--success-color)' : 'var(--accent-color)', transition: 'width 1s ease' }}></div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px' }}>Probabilitas Penguasaan Rata-rata</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: '600' }}>Probabilitas Penguasaan Rata-rata</div>
               </>
             )}
           </div>
 
           {/* Topik Tersulit */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '800' }}>
               Topik Tersulit
             </div>
             {isLoadingStats ? (
               <div style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Memuat...</div>
             ) : stats?.topik_tersulit ? (
               <>
-                <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--danger-color)', marginTop: '8px', lineHeight: 1.3 }}>
+                <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--danger-color)', marginTop: '8px', lineHeight: 1.3, textTransform: 'uppercase' }}>
                   {stats.topik_tersulit.nama}
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: '600' }}>
                   Rata-rata BKT: {(stats.topik_tersulit.avg_bkt * 100).toFixed(1)}%
                 </p>
               </>
             ) : (
-              <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '12px' }}>Belum ada data BKT</div>
+              <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '12px', fontWeight: '700' }}>Belum ada data BKT</div>
             )}
           </div>
 
           {/* Total Siswa */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '800' }}>
               Total Siswa
             </div>
-            <div style={{ fontSize: '2.8rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>
+            <div style={{ fontSize: '2.8rem', fontWeight: '800', color: 'var(--accent-color)' }}>
               {isLoadingStats ? '—' : stats?.total_siswa ?? 0}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px' }}>Terdaftar di instansi ini</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>Terdaftar di instansi ini</div>
           </div>
 
           {/* Total Soal */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '800' }}>
               Total Soal
             </div>
-            <div style={{ fontSize: '2.8rem', fontWeight: 'bold', color: '#f59e0b' }}>
+            <div style={{ fontSize: '2.8rem', fontWeight: '800', color: 'var(--accent-blue)' }}>
               {isLoadingStats ? '—' : stats?.total_soal ?? 0}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px' }}>Soal aktif di bank soal</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>Soal aktif di bank soal</div>
           </div>
         </div>
 
@@ -155,30 +155,29 @@ function DashboardDosen() {
           const siswaPerhatian = siswaProgress.filter(s => s.perlu_perhatian);
           if (siswaPerhatian.length === 0) return null;
           return (
-            <div className="glass-panel" style={{ padding: '28px', marginBottom: '36px', borderLeft: '3px solid var(--danger-color)' }}>
+            <div className="glass-panel" style={{ padding: '28px', marginBottom: '36px', border: '2.5px solid #000000', borderLeft: '8px solid var(--danger-color)', boxShadow: 'var(--brutal-shadow)', background: 'var(--bg-card)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '1.4rem' }}></span>
                 <div>
-                  <h2 style={{ fontSize: '1.1rem', margin: 0, color: 'var(--danger-color)' }}>
+                  <h2 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--danger-color)', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>
                     Rekomendasi Tindakan — {siswaPerhatian.length} Siswa Perlu Bimbingan
                   </h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '4px 0 0 0' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '4px 0 0 0', fontWeight: '600' }}>
                     Siswa berikut memiliki setidaknya 1 topik dengan tingkat penguasaan P(L) di bawah 40%.
                     Pertimbangkan untuk memberikan sesi remedial atau materi tambahan.
                   </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                 {siswaPerhatian.map(s => (
                   <div key={s.user_id} style={{
-                    padding: '10px 16px', borderRadius: '8px',
-                    background: 'rgba(248, 81, 73, 0.08)', border: '1px solid rgba(248,81,73,0.25)',
-                    display: 'flex', alignItems: 'center', gap: '10px'
+                    padding: '10px 16px', borderRadius: '4px',
+                    background: 'var(--bg-card-hover)', border: '2px solid #000000',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    boxShadow: '2px 2px 0px #000000'
                   }}>
-                    <span style={{ fontSize: '1.1rem' }}></span>
                     <div>
-                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{s.nama_lengkap}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontWeight: '800', fontSize: '0.9rem', textTransform: 'uppercase' }}>{s.nama_lengkap}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
                         {s.nama_kelas || 'Tanpa Kelas'} • P(L) rata-rata: {(s.avg_bkt * 100).toFixed(1)}%
                       </div>
                     </div>
@@ -239,9 +238,9 @@ function DashboardDosen() {
           {/* Header tabel */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap', gap: '12px'
+            padding: '20px 24px', borderBottom: '2.5px solid #000000', flexWrap: 'wrap', gap: '12px', background: 'var(--bg-card-hover)'
           }}>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Performa & Progress Siswa</h2>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Performa & Progress Siswa</h2>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 className="input-field"
@@ -255,7 +254,7 @@ function DashboardDosen() {
                   className="input-field"
                   value={filterKelas}
                   onChange={e => setFilterKelas(e.target.value)}
-                  style={{ padding: '8px 14px', fontSize: '0.875rem', background: 'rgba(0,0,0,0.4)' }}
+                  style={{ padding: '8px 14px', fontSize: '0.875rem', background: '#000000', border: '2px solid #000000', color: '#ffffff' }}
                 >
                   <option value="">Semua Kelas</option>
                   {kelasList.map(k => <option key={k} value={k}>{k}</option>)}
@@ -273,22 +272,26 @@ function DashboardDosen() {
 
           {/* Isi tabel */}
           {isLoadingSiswa ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>
               Memuat data siswa...
             </div>
           ) : filteredSiswa.length === 0 ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>
               {searchQuery || filterKelas
                 ? 'Tidak ada siswa yang cocok dengan filter.'
                 : 'Belum ada siswa terdaftar di instansi ini.'}
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table className="brutal-table">
               <thead>
-                <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
-                  {['#', 'Nama Siswa', 'Kelas', 'Topik Terakhir', 'Submit', 'P(L) Rata-rata', 'Status'].map(h => (
-                    <th key={h} style={{ padding: '13px 20px', color: 'var(--text-secondary)', fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
-                  ))}
+                <tr>
+                  <th>#</th>
+                  <th>Nama Siswa</th>
+                  <th>Kelas</th>
+                  <th>Topik Terakhir</th>
+                  <th>Submit</th>
+                  <th>P(L) Rata-rata</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -296,58 +299,46 @@ function DashboardDosen() {
                   const bktStatus = getBktStatus(siswa.avg_bkt);
                   const bktPct = (siswa.avg_bkt * 100).toFixed(1);
                   return (
-                    <tr
-                      key={siswa.user_id}
-                      style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s', cursor: 'default' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{i + 1}</td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <tr key={siswa.user_id}>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>{i + 1}</td>
+                      <td>
+                        <div style={{ fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {siswa.perlu_perhatian && (
-                            <span title="Siswa ini memiliki topik dengan P(L) di bawah 40% — perlu bimbingan ekstra" style={{
-                              fontSize: '0.7rem', fontWeight: 'bold', padding: '2px 8px',
-                              borderRadius: '20px', background: 'rgba(248, 81, 73, 0.15)',
-                              color: 'var(--danger-color)', border: '1px solid rgba(248,81,73,0.3)',
-                              cursor: 'help', whiteSpace: 'nowrap'
+                            <span className="brutal-badge brutal-badge-danger" title="Siswa ini memiliki topik dengan P(L) di bawah 40% — perlu bimbingan ekstra" style={{
+                              fontSize: '0.65rem', fontWeight: '800', padding: '2px 6px',
+                              cursor: 'help', whiteSpace: 'nowrap', textTransform: 'uppercase', boxShadow: '1px 1px 0px #000000'
                             }}>Perhatian</span>
                           )}
                           {siswa.nama_lengkap}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>@{siswa.username}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>@{siswa.username}</div>
                       </td>
-                      <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600' }}>
                         {siswa.nama_kelas || <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
                       </td>
-                      <td style={{ padding: '16px 20px', fontSize: '0.875rem' }}>
-                        {siswa.topik_terakhir
-                          ? <span style={{ color: 'var(--accent-color)' }}>{siswa.topik_terakhir}</span>
-                          : <span style={{ color: 'rgba(255,255,255,0.2)' }}>Belum ada</span>}
+                      <td style={{ fontSize: '0.875rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-blue)' }}>
+                        {siswa.topik_terakhir || <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: '600' }}>Belum ada</span>}
                       </td>
-                      <td style={{ padding: '16px 20px', textAlign: 'center', fontWeight: 'bold' }}>
+                      <td style={{ textAlign: 'center', fontWeight: '800' }}>
                         {siswa.jumlah_submit}
                       </td>
-                      <td style={{ padding: '16px 20px', minWidth: '160px' }}>
+                      <td style={{ minWidth: '160px' }}>
                         {siswa.avg_bkt === 0 ? (
-                          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>Belum ada data</span>
+                          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', fontWeight: '600' }}>Belum ada data</span>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}>
+                            <div style={{ flex: 1, height: '10px', background: '#000000', border: '1.5px solid #000000', borderRadius: '2px', overflow: 'hidden' }}>
                               <div style={{
-                                width: `${bktPct}%`, height: '100%', borderRadius: '3px',
+                                width: `${bktPct}%`, height: '100%',
                                 background: bktStatus.color, transition: 'width 0.8s ease'
                               }}></div>
                             </div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', minWidth: '40px' }}>{bktPct}%</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '800', minWidth: '40px' }}>{bktPct}%</span>
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <span style={{
-                          padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 'bold',
-                          background: bktStatus.bg, color: bktStatus.color
-                        }}>
+                      <td>
+                        <span className={`brutal-badge brutal-badge-${siswa.avg_bkt === 0 ? 'secondary' : bktStatus.badgeClass}`}>
                           {siswa.avg_bkt === 0 ? 'Belum Mulai' : bktStatus.label}
                         </span>
                       </td>
@@ -360,7 +351,7 @@ function DashboardDosen() {
 
           {/* Footer tabel */}
           {filteredSiswa.length > 0 && (
-            <div style={{ padding: '12px 24px', borderTop: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            <div style={{ padding: '12px 24px', borderTop: '2.5px solid #000000', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '600' }}>
               Menampilkan {filteredSiswa.length} dari {siswaProgress.length} siswa
             </div>
           )}

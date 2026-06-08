@@ -34,15 +34,15 @@ function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '460px', padding: '36px', margin: '20px' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '460px', padding: '36px', margin: '20px', borderRadius: '4px', border: '2.5px solid #000000', boxShadow: 'var(--brutal-shadow-hover)', background: 'var(--bg-card)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Tambah Akun Dosen</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer' }}>✕</button>
+          <h2 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Tambah Akun Dosen</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', fontWeight: '800' }}>✕</button>
         </div>
 
         {error && (
-          <div style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', color: '#f87171', fontSize: '0.875rem' }}>
+          <div style={{ background: 'var(--danger-color)', border: '2px solid #000000', borderRadius: '4px', padding: '10px 14px', marginBottom: '16px', color: '#000000', fontWeight: '700', fontSize: '0.875rem', boxShadow: '2px 2px 0px #000000' }}>
             {error}
           </div>
         )}
@@ -70,10 +70,10 @@ function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
                 onChange={e => setForm({ ...form, konfirmasi: e.target.value })} required disabled={isLoading} />
             </div>
           </div>
-          <div style={{ background: 'rgba(31,111,235,0.1)', border: '1px solid rgba(31,111,235,0.3)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.8rem', color: 'var(--accent-color)' }}>
-            Akun dosen baru akan otomatis terdaftar di instansi <strong>{JSON.parse(localStorage.getItem('user') || '{}')?.nama_instansi}</strong>.
+          <div style={{ background: 'var(--bg-card-hover)', border: '2px solid #000000', borderRadius: '4px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: '600', boxShadow: '2px 2px 0px #000000' }}>
+            Akun dosen baru akan otomatis terdaftar di instansi <strong style={{ color: 'var(--accent-color)' }}>{JSON.parse(localStorage.getItem('user') || '{}')?.nama_instansi}</strong>.
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
             <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }} disabled={isLoading}>Batal</button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1, opacity: isLoading ? 0.7 : 1 }} disabled={isLoading}>
               {isLoading ? 'Menyimpan...' : 'Buat Akun Dosen'}
@@ -142,11 +142,17 @@ function ManajemenAkun() {
   });
 
   const tabStyle = (tab) => ({
-    padding: '10px 24px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600',
-    borderBottom: activeTab === tab ? '2px solid var(--accent-color)' : '2px solid transparent',
-    color: activeTab === tab ? 'var(--accent-color)' : 'var(--text-secondary)',
-    transition: 'all 0.2s', background: 'none', border: 'none',
-    borderBottom: activeTab === tab ? '2px solid var(--accent-color)' : '2px solid transparent',
+    padding: '10px 24px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '800',
+    textTransform: 'uppercase',
+    background: activeTab === tab ? 'var(--accent-color)' : 'var(--bg-card)',
+    color: activeTab === tab ? '#000000' : 'var(--text-primary)',
+    border: '2.5px solid #000000',
+    borderBottom: activeTab === tab ? 'none' : '2.5px solid #000000',
+    borderRadius: '4px 4px 0 0',
+    position: 'relative',
+    bottom: activeTab === tab ? '-2.5px' : '0',
+    zIndex: activeTab === tab ? 2 : 1,
+    transition: 'all 0.1s'
   });
 
   return (
@@ -157,15 +163,20 @@ function ManajemenAkun() {
 
         {/* Header */}
         <div style={{ marginBottom: '28px' }}>
-          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Manajemen Akun</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            Kelola akun siswa dan dosen di <strong>{user?.nama_instansi}</strong>
+          <h1 style={{ fontSize: '2.2rem', marginBottom: '4px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Manajemen Akun</h1>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
+            Kelola akun siswa dan dosen di <strong style={{ color: '#FFFFFF' }}>{user?.nama_instansi}</strong>
           </p>
         </div>
 
         {/* Notifikasi */}
         {notification && (
-          <div style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '10px', padding: '14px 20px', marginBottom: '24px', color: '#4ade80', fontWeight: '500' }}>
+          <div style={{
+            background: 'var(--success-color)', border: '2.5px solid #000000',
+            borderRadius: '4px', padding: '14px 20px', marginBottom: '24px',
+            color: '#000000', fontWeight: '800', boxShadow: 'var(--brutal-shadow)',
+            textTransform: 'uppercase', fontSize: '0.9rem'
+          }}>
             {notification}
           </div>
         )}
@@ -174,8 +185,8 @@ function ManajemenAkun() {
         <div className="glass-panel" style={{ overflow: 'hidden' }}>
 
           {/* Tab Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', padding: '0 8px' }}>
-            <div style={{ display: 'flex' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2.5px solid #000000', padding: '0 10px', background: 'var(--bg-card-hover)', paddingTop: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button style={tabStyle('siswa')} onClick={() => setActiveTab('siswa')}>
                 Daftar Siswa ({siswaList.length})
               </button>
@@ -186,7 +197,7 @@ function ManajemenAkun() {
 
             {/* Tombol aksi */}
             {activeTab === 'dosen' && (
-              <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ margin: '8px 16px', padding: '8px 18px', fontSize: '0.875rem' }}>
+              <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ padding: '8px 16px', fontSize: '0.875rem', marginBottom: '10px' }}>
                 + Tambah Dosen
               </button>
             )}
@@ -196,7 +207,7 @@ function ManajemenAkun() {
           {activeTab === 'siswa' && (
             <>
               {/* Filter bar */}
-              <div style={{ display: 'flex', gap: '10px', padding: '16px 20px', borderBottom: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '10px', padding: '16px 20px', borderBottom: '2.5px solid #000000', flexWrap: 'wrap' }}>
                 <input
                   className="input-field"
                   placeholder="Cari nama / username..."
@@ -206,7 +217,7 @@ function ManajemenAkun() {
                 />
                 {kelasList.length > 0 && (
                   <select className="input-field" value={filterKelas} onChange={e => setFilterKelas(e.target.value)}
-                    style={{ padding: '8px 14px', fontSize: '0.875rem', background: 'rgba(0,0,0,0.4)' }}>
+                    style={{ padding: '8px 14px', fontSize: '0.875rem', background: '#000000', border: '2px solid #000000', color: '#ffffff' }}>
                     <option value="">Semua Kelas</option>
                     {kelasList.map(k => <option key={k} value={k}>{k}</option>)}
                   </select>
@@ -215,36 +226,35 @@ function ManajemenAkun() {
               </div>
 
               {isLoadingSiswa ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat data siswa...</div>
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>Memuat data siswa...</div>
               ) : filteredSiswa.length === 0 ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>
                   {searchSiswa || filterKelas ? 'Tidak ada siswa yang cocok dengan filter.' : 'Belum ada siswa terdaftar di instansi ini.'}
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table className="brutal-table">
                   <thead>
-                    <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
-                      {['#', 'Nama Lengkap', 'Username', 'Kelas', 'Status'].map(h => (
-                        <th key={h} style={{ padding: '13px 20px', color: 'var(--text-secondary)', fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
+                    <tr>
+                      <th>#</th>
+                      <th>Nama Lengkap</th>
+                      <th>Username</th>
+                      <th>Kelas</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredSiswa.map((siswa, i) => (
-                      <tr key={siswa.user_id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{i + 1}</td>
-                        <td style={{ padding: '14px 20px', fontWeight: '600' }}>{siswa.nama_lengkap}</td>
-                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.875rem' }}>@{siswa.username}</td>
-                        <td style={{ padding: '14px 20px', fontSize: '0.875rem' }}>
+                      <tr key={siswa.user_id}>
+                        <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>{i + 1}</td>
+                        <td style={{ fontWeight: '800' }}>{siswa.nama_lengkap}</td>
+                        <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: '600' }}>@{siswa.username}</td>
+                        <td>
                           {siswa.nama_kelas
-                            ? <span style={{ background: 'rgba(31,111,235,0.15)', border: '1px solid rgba(31,111,235,0.3)', borderRadius: '6px', padding: '3px 10px', color: 'var(--accent-color)', fontSize: '0.82rem' }}>{siswa.nama_kelas}</span>
+                            ? <span className="brutal-badge brutal-badge-blue">{siswa.nama_kelas}</span>
                             : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
                         </td>
-                        <td style={{ padding: '14px 20px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(63,185,80,0.15)', borderRadius: '20px', padding: '3px 12px', fontSize: '0.78rem', color: 'var(--success-color)', fontWeight: 'bold' }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success-color)', display: 'inline-block' }}></span>
+                        <td>
+                          <span className="brutal-badge brutal-badge-success">
                             Aktif
                           </span>
                         </td>
@@ -256,7 +266,7 @@ function ManajemenAkun() {
 
               {/* Footer */}
               {filteredSiswa.length > 0 && (
-                <div style={{ padding: '12px 20px', borderTop: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                <div style={{ padding: '12px 20px', borderTop: '2.5px solid #000000', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: '600' }}>
                   Menampilkan {filteredSiswa.length} dari {siswaList.length} siswa terdaftar
                 </div>
               )}
@@ -267,41 +277,40 @@ function ManajemenAkun() {
           {activeTab === 'dosen' && (
             <>
               {isLoadingDosen ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat data dosen...</div>
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>Memuat data dosen...</div>
               ) : dosenList.length === 0 ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '700' }}>
                   Belum ada dosen lain. Klik "+ Tambah Dosen" untuk menambahkan.
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table className="brutal-table">
                   <thead>
-                    <tr style={{ background: 'rgba(0,0,0,0.3)' }}>
-                      {['#', 'Nama Lengkap', 'Username', 'Role', 'Status'].map(h => (
-                        <th key={h} style={{ padding: '13px 20px', color: 'var(--text-secondary)', fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
+                    <tr>
+                      <th>#</th>
+                      <th>Nama Lengkap</th>
+                      <th>Username</th>
+                      <th>Role</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {dosenList.map((dosen, i) => (
-                      <tr key={dosen.user_id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{i + 1}</td>
-                        <td style={{ padding: '14px 20px', fontWeight: '600' }}>
+                      <tr key={dosen.user_id}>
+                        <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>{i + 1}</td>
+                        <td style={{ fontWeight: '800' }}>
                           {dosen.nama_lengkap}
                           {dosen.user_id === user?.user_id && (
-                            <span style={{ marginLeft: '8px', fontSize: '0.75rem', color: 'var(--accent-color)', background: 'rgba(31,111,235,0.15)', padding: '2px 8px', borderRadius: '10px' }}>Anda</span>
+                            <span className="brutal-badge brutal-badge-blue" style={{ marginLeft: '8px', fontSize: '0.7rem', textTransform: 'uppercase', padding: '2px 6px' }}>Anda</span>
                           )}
                         </td>
-                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.875rem' }}>@{dosen.username}</td>
-                        <td style={{ padding: '14px 20px' }}>
-                          <span style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px', padding: '3px 10px', color: '#f59e0b', fontSize: '0.82rem', fontWeight: '600' }}>
+                        <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: '600' }}>@{dosen.username}</td>
+                        <td>
+                          <span className="brutal-badge brutal-badge-yellow">
                             Dosen
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(63,185,80,0.15)', borderRadius: '20px', padding: '3px 12px', fontSize: '0.78rem', color: 'var(--success-color)', fontWeight: 'bold' }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success-color)', display: 'inline-block' }}></span>
+                        <td>
+                          <span className="brutal-badge brutal-badge-success">
                             Aktif
                           </span>
                         </td>
