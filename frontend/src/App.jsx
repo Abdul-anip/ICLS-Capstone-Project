@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import DashboardDosen from './pages/DashboardDosen'
 import WorkspaceSiswa from './pages/WorkspaceSiswa'
+import DashboardSiswa from './pages/DashboardSiswa'
 import ManajemenSoal from './pages/ManajemenSoal'
 import ManajemenAkun from './pages/ManajemenAkun'
 import AdminDashboard from './pages/AdminDashboard'
@@ -46,7 +47,16 @@ function App() {
         />
 
         <Route
-          path="/siswa/workspace"
+          path="/siswa/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['siswa']}>
+              <DashboardSiswa />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/siswa/workspace/:soalId"
           element={
             <ProtectedRoute allowedRoles={['siswa']}>
               <WorkspaceSiswa />

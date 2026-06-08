@@ -193,6 +193,13 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
         
         learned_prob = bkt_record.learned_prob if bkt_record else 0.1
 
+        # Cek apakah pernah diselesaikan dengan benar (binary_result = 1)
+        solved = db.query(models.Evaluasi).filter(
+            models.Evaluasi.siswa_id == user_id,
+            models.Evaluasi.soal_id == s.soal_id,
+            models.Evaluasi.binary_result == 1
+        ).first() is not None
+
         result.append({
             "soal_id": s.soal_id,
             "topik_id": s.topik_id,
@@ -200,10 +207,61 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
             "judul_soal": s.judul_soal,
             "deskripsi_soal": s.deskripsi_soal,
             "tingkat_kesulitan": s.tingkat_kesulitan,
-            "learned_prob": learned_prob
+            "learned_prob": learned_prob,
+            "is_solved": solved
         })
         
     return result
+
+
+@router.get("/siswa/{user_id}/soal/{soal_id}")
+def get_soal_siswa_single(user_id: int, soal_id: int, db: Session = Depends(get_db)):
+    """Mengambil detail satu soal untuk siswa beserta state BKT topik terkait dan riwayat submit soal tersebut."""
+    siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
+        
+    soal = db.query(models.Soal).filter(models.Soal.soal_id == soal_id).first()
+    if not soal:
+        raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
+        
+    topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == soal.topik_id).first()
+    nama_topik = topik.nama_topik if topik else "Topik Tidak Diketahui"
+    
+    bkt_record = db.query(models.BKTHistory).filter(
+        models.BKTHistory.siswa_id == user_id,
+        models.BKTHistory.topik_id == soal.topik_id
+    ).first()
+    learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+    
+    evaluasi_soal = db.query(models.Evaluasi).filter(
+        models.Evaluasi.siswa_id == user_id,
+        models.Evaluasi.soal_id == soal_id
+    ).order_by(models.Evaluasi.timestamp.desc()).all()
+    
+    attempts = []
+    for r in evaluasi_soal:
+        attempts.append({
+            "evaluasi_id": r.evaluasi_id,
+            "status_compile": r.status_compile,
+            "binary_result": r.binary_result,
+            "timestamp": r.timestamp,
+            "source_code": r.source_code
+        })
+        
+    is_solved = any(r.binary_result == 1 for r in evaluasi_soal)
+    
+    return {
+        "soal_id": soal.soal_id,
+        "topik_id": soal.topik_id,
+        "nama_topik": nama_topik,
+        "judul_soal": soal.judul_soal,
+        "deskripsi_soal": soal.deskripsi_soal,
+        "tingkat_kesulitan": soal.tingkat_kesulitan,
+        "learned_prob": learned_prob,
+        "is_solved": is_solved,
+        "attempts": attempts
+    }
 
 @router.get("/siswa/{user_id}/bkt-stats", response_model=list[schemas.BKTStatsResponse])
 def get_bkt_stats(user_id: int, db: Session = Depends(get_db)):

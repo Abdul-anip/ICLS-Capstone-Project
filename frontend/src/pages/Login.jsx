@@ -40,7 +40,7 @@ function Login() {
       } else if (data.role === 'dosen') {
         navigate('/dosen/dashboard');
       } else {
-        navigate('/siswa/workspace');
+        navigate('/siswa/dashboard');
       }
 
     } catch (err) {

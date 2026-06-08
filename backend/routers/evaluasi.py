@@ -13,6 +13,27 @@ router = APIRouter(
 
 @router.post("/submit", response_model=schemas.CodeEvaluationResponse)
 def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
+    # 0. Validasi Kode Kosong atau Template Default
+    code_stripped = submission.source_code.strip()
+    if not code_stripped:
+        raise HTTPException(status_code=400, detail="Kode tidak boleh kosong")
+        
+    TEMPLATES = [
+        "",
+        "# Tulis kodemu disini",
+        "// Tulis kodemu disini",
+        "<?php\n// Tulis kodemu disini\n\n?>",
+        "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Tulis kodemu disini\n    return 0;\n}",
+        "public class Main {\n    public static void main(String[] args) {\n        // Tulis kodemu disini\n    }\n}"
+    ]
+    
+    def normalize(s):
+        return "".join(s.split()).lower()
+        
+    normalized_sub = normalize(code_stripped)
+    if any(normalize(temp) == normalized_sub for temp in TEMPLATES):
+        raise HTTPException(status_code=400, detail="Silakan lengkapi kode solusi Anda terlebih dahulu")
+
     # 1. Cari soal dan test case
     soal = db.query(models.Soal).filter(models.Soal.soal_id == submission.soal_id).first()
     if not soal:

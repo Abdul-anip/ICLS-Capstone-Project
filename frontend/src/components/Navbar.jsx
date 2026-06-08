@@ -59,7 +59,7 @@ function Navbar({ role, activePage }) {
             </>
           ) : (
             <>
-              <span onClick={() => navigate('/siswa/workspace')} style={{ color: activePage === 'workspace' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: '700', textTransform: 'uppercase', borderBottom: activePage === 'workspace' ? '3px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Workspace Koding</span>
+              <span onClick={() => navigate('/siswa/dashboard')} style={{ color: activePage === 'dashboard' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: '700', textTransform: 'uppercase', borderBottom: activePage === 'dashboard' ? '3px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Dashboard Siswa</span>
               <span onClick={() => navigate('/profil')} style={{ color: activePage === 'profil' ? 'var(--accent-color)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: '700', textTransform: 'uppercase', borderBottom: activePage === 'profil' ? '3px solid var(--accent-color)' : 'none', paddingBottom: '4px' }}>Profil</span>
             </>
           )}
