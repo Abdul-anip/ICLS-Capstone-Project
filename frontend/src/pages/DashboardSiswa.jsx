@@ -23,6 +23,7 @@ function DashboardSiswa() {
   const [bktRawStats, setBktRawStats] = useState([]);
   const [history, setHistory] = useState([]);
   const [rekomendasi, setRekomendasi] = useState([]);
+  const [selectedTopic, setSelectedTopic] = useState('Semua');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -73,6 +74,11 @@ function DashboardSiswa() {
     acc[soal.nama_topik].list.push(soal);
     return acc;
   }, {});
+
+  // Ambil daftar soal yang terfilter berdasarkan topik terpilih
+  const filteredQuestions = selectedTopic === 'Semua'
+    ? soalList
+    : (groupedSoal[selectedTopic]?.list || []);
 
   // Hitung rata-rata BKT siswa
   const avgProgress = bktRawStats.length > 0
@@ -211,7 +217,7 @@ function DashboardSiswa() {
             <div style={{ marginBottom: '20px' }}>
               <h2 style={{ fontSize: '1.3rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>Daftar Topik & Soal Latihan</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: '600' }}>
-                Pilihlah salah satu soal latihan di bawah ini untuk mulai menulis kode.
+                Klik pada kartu topik untuk memfilter daftar soal latihan yang ingin Anda kerjakan.
               </p>
             </div>
 
@@ -220,94 +226,185 @@ function DashboardSiswa() {
                 Belum ada soal latihan yang dirilis oleh dosen Anda.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {Object.entries(groupedSoal).map(([namaTopik, dataTopik]) => {
-                  const statusInfo = getBktStatus(dataTopik.learned_prob);
-                  return (
-                    <div
-                      key={namaTopik}
-                      className="glass-panel"
-                      style={{
-                        padding: '20px', background: 'var(--bg-card)',
-                        border: '2px solid #000000', boxShadow: '3px 3px 0px #000000'
-                      }}
-                    >
-                      {/* Topic Title and BKT Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed #000000', paddingBottom: '12px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                        <div>
-                          <h3 style={{ fontSize: '1.1rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>
-                            Topik: {namaTopik}
-                          </h3>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '700' }}>
-                            Tingkat Penguasaan:
-                          </span>
-                          <span className={`brutal-badge ${statusInfo.badgeClass}`} style={{ fontWeight: '800' }}>
-                            {statusInfo.label} ({(dataTopik.learned_prob * 100).toFixed(0)}%)
-                          </span>
-                          <div style={{ width: '80px', height: '10px', background: '#000000', border: '1.5px solid #000000', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div style={{ width: `${dataTopik.learned_prob * 100}%`, height: '100%', background: statusInfo.color }}></div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Question Roster under Topic */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {dataTopik.list.map(soal => (
-                          <div
-                            key={soal.soal_id}
-                            style={{
-                              background: '#08080A', padding: '14px 20px', borderRadius: '4px',
-                              border: '1.5px solid #000000', display: 'flex', justifyContent: 'space-between',
-                              alignItems: 'center', flexWrap: 'wrap', gap: '15px'
-                            }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', color: '#FFF' }}>
-                                {soal.judul_soal || 'Soal Latihan'}
-                              </h4>
-                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical' }}>
-                                {soal.deskripsi_soal}
-                              </p>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                              {/* Difficulty Badge */}
-                              <span style={{
-                                fontSize: '0.7rem',
-                                color: soal.tingkat_kesulitan === 'Mudah' ? 'var(--success-color)' : soal.tingkat_kesulitan === 'Sedang' ? 'var(--accent-color)' : 'var(--danger-color)',
-                                fontWeight: '800', border: '1px solid #000000', padding: '2px 8px', borderRadius: '2px', background: 'rgba(0,0,0,0.4)'
-                              }}>
-                                {soal.tingkat_kesulitan.toUpperCase()}
-                              </span>
-
-                              {/* Solved Status Badge */}
-                              {soal.is_solved ? (
-                                <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                                  Selesai
-                                </span>
-                              ) : (
-                                <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                                  Belum Dikerjakan
-                                </span>
-                              )}
-
-                              {/* Button */}
-                              <button
-                                className={`btn ${soal.is_solved ? 'btn-secondary' : 'btn-primary'}`}
-                                onClick={() => navigate(`/siswa/workspace/${soal.soal_id}`)}
-                                style={{ padding: '6px 16px', fontSize: '0.75rem' }}
-                              >
-                                {soal.is_solved ? 'Kerjakan Lagi' : 'Mulai Mengerjakan'}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+              <div>
+                {/* Grid Kartu Topik */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                  {/* Kartu Semua Topik */}
+                  <div
+                    onClick={() => setSelectedTopic('Semua')}
+                    style={{
+                      padding: '20px',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                      background: selectedTopic === 'Semua' ? 'var(--bg-card-hover)' : 'var(--bg-card)',
+                      border: '2.5px solid #000000',
+                      transform: selectedTopic === 'Semua' ? 'translate(2px, 2px)' : 'none',
+                      boxShadow: selectedTopic === 'Semua' ? '2px 2px 0px #000000' : 'var(--brutal-shadow)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: '130px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ fontSize: '1.05rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800', color: selectedTopic === 'Semua' ? 'var(--accent-color)' : '#FFF' }}>
+                        🌍 Semua Topik
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '6px', lineHeight: '1.4' }}>
+                        Tampilkan seluruh daftar soal latihan dari semua topik
+                      </p>
                     </div>
-                  );
-                })}
+                    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginTop: '12px', color: 'var(--text-secondary)' }}>
+                      Total Soal: <strong style={{ color: '#FFF' }}>{soalList.length} Soal</strong>
+                    </div>
+                  </div>
+
+                  {/* Kartu Topik Individu */}
+                  {Object.entries(groupedSoal).map(([namaTopik, dataTopik]) => {
+                    const isSelected = selectedTopic === namaTopik;
+                    const statusInfo = getBktStatus(dataTopik.learned_prob);
+                    const solvedCount = dataTopik.list.filter(s => s.is_solved).length;
+                    const totalCount = dataTopik.list.length;
+
+                    return (
+                      <div
+                        key={namaTopik}
+                        onClick={() => setSelectedTopic(namaTopik)}
+                        style={{
+                          padding: '20px',
+                          cursor: 'pointer',
+                          borderRadius: '6px',
+                          background: isSelected ? 'var(--bg-card-hover)' : 'var(--bg-card)',
+                          border: '2.5px solid #000000',
+                          transform: isSelected ? 'translate(2px, 2px)' : 'none',
+                          boxShadow: isSelected ? '2px 2px 0px #000000' : 'var(--brutal-shadow)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          minHeight: '130px',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                            <h3 style={{
+                              fontSize: '1.02rem',
+                              textTransform: 'uppercase',
+                              fontFamily: 'Outfit',
+                              fontWeight: '800',
+                              color: isSelected ? 'var(--accent-color)' : '#FFF',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: '2',
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: '1.3'
+                            }}>
+                              {namaTopik}
+                            </h3>
+                            <span className={`brutal-badge ${statusInfo.badgeClass}`} style={{ fontSize: '0.6rem', padding: '1px 5px', flexShrink: 0 }}>
+                              {statusInfo.label}
+                            </span>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                            <div style={{ flex: 1, height: '6px', background: '#000000', border: '1.5px solid #000000', borderRadius: '1px', overflow: 'hidden' }}>
+                              <div style={{ width: `${dataTopik.learned_prob * 100}%`, height: '100%', background: statusInfo.color }}></div>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--text-secondary)', minWidth: '28px', textAlign: 'right' }}>
+                              {(dataTopik.learned_prob * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          <span>Progress:</span>
+                          <strong style={{ color: '#FFF' }}>{solvedCount} / {totalCount} Selesai</strong>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Sub-Header Soal Terfilter */}
+                <div style={{ background: '#08080A', padding: '12px 18px', border: '2.5px solid #000000', borderRadius: '4px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <span style={{ fontWeight: '800', textTransform: 'uppercase', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    Topik Terpilih: <strong style={{ color: 'var(--accent-color)' }}>{selectedTopic === 'Semua' ? 'Semua Topik' : selectedTopic}</strong>
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                    Menampilkan <strong style={{ color: '#FFF' }}>{filteredQuestions.length}</strong> Soal
+                  </span>
+                </div>
+
+                {/* Roster Soal */}
+                {filteredQuestions.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    Tidak ada soal latihan untuk topik ini.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {filteredQuestions.map(soal => (
+                      <div
+                        key={soal.soal_id}
+                        style={{
+                          background: '#08080A', padding: '14px 20px', borderRadius: '4px',
+                          border: '1.5px solid #000000', display: 'flex', justifyContent: 'space-between',
+                          alignItems: 'center', flexWrap: 'wrap', gap: '15px',
+                          boxShadow: '2px 2px 0px #000000'
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: '250px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: '800', textTransform: 'uppercase', color: '#FFF' }}>
+                              {soal.judul_soal || 'Soal Latihan'}
+                            </h4>
+                            {selectedTopic === 'Semua' && (
+                              <span style={{ fontSize: '0.65rem', background: 'var(--bg-card)', padding: '1px 6px', border: '1.5px solid #000000', borderRadius: '2px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                                {soal.nama_topik}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical' }}>
+                            {soal.deskripsi_soal}
+                          </p>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                          {/* Difficulty Badge */}
+                          <span style={{
+                            fontSize: '0.7rem',
+                            color: soal.tingkat_kesulitan === 'Mudah' ? 'var(--success-color)' : soal.tingkat_kesulitan === 'Sedang' ? 'var(--accent-color)' : 'var(--danger-color)',
+                            fontWeight: '800', border: '1px solid #000000', padding: '2px 8px', borderRadius: '2px', background: 'rgba(0,0,0,0.4)'
+                          }}>
+                            {soal.tingkat_kesulitan.toUpperCase()}
+                          </span>
+
+                          {/* Solved Status Badge */}
+                          {soal.is_solved ? (
+                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
+                              Selesai
+                            </span>
+                          ) : (
+                            <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
+                              Belum Dikerjakan
+                            </span>
+                          )}
+
+                          {/* Button */}
+                          <button
+                            className={`btn ${soal.is_solved ? 'btn-secondary' : 'btn-primary'}`}
+                            onClick={() => navigate(`/siswa/workspace/${soal.soal_id}`)}
+                            style={{ padding: '6px 16px', fontSize: '0.75rem' }}
+                          >
+                            {soal.is_solved ? 'Kerjakan Lagi' : 'Mulai Mengerjakan'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
