@@ -200,6 +200,16 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
             models.Evaluasi.binary_result == 1
         ).first() is not None
 
+        # Cek status lock/unlock sesuai aturan adaptif:
+        # Mudah: Selalu terbuka (is_locked = False)
+        # Sedang: Terbuka jika learned_prob >= 0.4
+        # Sulit: Terbuka jika learned_prob >= 0.8
+        is_locked = False
+        if s.tingkat_kesulitan == "Sedang" and learned_prob < 0.4:
+            is_locked = True
+        elif s.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
+            is_locked = True
+
         result.append({
             "soal_id": s.soal_id,
             "topik_id": s.topik_id,
@@ -208,7 +218,8 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
             "deskripsi_soal": s.deskripsi_soal,
             "tingkat_kesulitan": s.tingkat_kesulitan,
             "learned_prob": learned_prob,
-            "is_solved": solved
+            "is_solved": solved,
+            "is_locked": is_locked
         })
         
     return result
@@ -233,6 +244,19 @@ def get_soal_siswa_single(user_id: int, soal_id: int, db: Session = Depends(get_
         models.BKTHistory.topik_id == soal.topik_id
     ).first()
     learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+    
+    # Validasi status lock/unlock untuk adaptif kognitif (bypass URL check)
+    is_locked = False
+    if soal.tingkat_kesulitan == "Sedang" and learned_prob < 0.4:
+        is_locked = True
+    elif soal.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
+        is_locked = True
+        
+    if is_locked:
+        raise HTTPException(
+            status_code=403, 
+            detail="Soal ini masih terkunci. Silakan tingkatkan pemahaman Anda pada topik ini terlebih dahulu."
+        )
     
     evaluasi_soal = db.query(models.Evaluasi).filter(
         models.Evaluasi.siswa_id == user_id,
@@ -335,17 +359,36 @@ def get_rekomendasi_topik(user_id: int, db: Session = Depends(get_db)):
         if learned_prob >= 0.95:
             continue
 
-        # Cari soal dari topik ini (ambil soal pertama untuk tombol "Langsung Kerjakan")
-        soal_tersedia = db.query(models.Soal).filter(
-            models.Soal.topik_id == t_id,
-            models.Soal.dosen_id.in_(dosen_instansi)
-        ).first()
-
-        # Tentukan tingkat kesulitan yang paling dominan di topik ini
+        # Ambil semua soal dari topik ini untuk analisis
         soal_list = db.query(models.Soal).filter(
             models.Soal.topik_id == t_id,
             models.Soal.dosen_id.in_(dosen_instansi)
         ).all()
+
+        # Cari soal yang belum diselesaikan dan tidak terkunci (Adaptive Routing)
+        soal_tersedia = None
+        for s in soal_list:
+            solved = db.query(models.Evaluasi).filter(
+                models.Evaluasi.siswa_id == user_id,
+                models.Evaluasi.soal_id == s.soal_id,
+                models.Evaluasi.binary_result == 1
+            ).first() is not None
+            
+            if not solved:
+                # Cek status lock
+                s_locked = False
+                if s.tingkat_kesulitan == "Sedang" and learned_prob < 0.4:
+                    s_locked = True
+                elif s.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
+                    s_locked = True
+                
+                if not s_locked:
+                    soal_tersedia = s
+                    break
+
+        # Jika semua soal sudah diselesaikan atau yang tersisa terkunci, fallback ke soal pertama
+        if not soal_tersedia and soal_list:
+            soal_tersedia = soal_list[0]
 
         # Hitung tingkat kesulitan dominan
         tingkat_counts = {"Mudah": 0, "Sedang": 0, "Sulit": 0}

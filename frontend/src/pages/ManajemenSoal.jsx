@@ -28,6 +28,14 @@ function ManajemenSoal() {
   const [deskripsiTopikBaru, setDeskripsiTopikBaru] = useState('');
   const [topikMessage, setTopikMessage] = useState('');
   const [topikMessageType, setTopikMessageType] = useState('success'); // 'success' | 'error'
+  const [expandedTopics, setExpandedTopics] = useState({});
+
+  const toggleTopic = (topikId) => {
+    setExpandedTopics(prev => ({
+      ...prev,
+      [topikId]: !prev[topikId]
+    }));
+  };
 
   // Ambil user dari localStorage
   const userRaw = localStorage.getItem('user');
@@ -237,63 +245,125 @@ function ManajemenSoal() {
           </div>
           
           <div style={{ flex: 1, overflowY: 'auto', padding: '0', maxHeight: '700px' }}>
-            {soalList.length === 0 ? (
-              <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-secondary)' }}>Belum ada soal terdaftar. Silakan klik "Tambah Soal Baru" untuk memulai.</div>
+            {topikList.length === 0 ? (
+              <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                Belum ada topik terdaftar. Silakan klik "Kelola Topik" untuk menambahkan topik terlebih dahulu.
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {soalList.map((s) => {
-                  const diffBadgeClass = s.tingkat_kesulitan === 'Mudah' ? 'success' : s.tingkat_kesulitan === 'Sedang' ? 'yellow' : 'danger';
+                {topikList.map((t) => {
+                  const questionsInTopik = soalList.filter(s => s.topik_id === t.topik_id);
+                  const isExpanded = !!expandedTopics[t.topik_id];
+                  const count = questionsInTopik.length;
+
                   return (
-                    <div 
-                      key={s.soal_id} 
-                      style={{ 
-                        padding: '24px', 
-                        borderBottom: '2px solid #000000',
-                        background: '#08080A'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap' }}>
-                            <span className="brutal-badge brutal-badge-yellow">ID: {s.soal_id}</span>
-                            <span className="brutal-badge brutal-badge-blue">
-                              {topikList.find(t => t.topik_id === s.topik_id)?.nama_topik || `Topik ${s.topik_id}`}
-                            </span>
-                            <span className={`brutal-badge brutal-badge-${diffBadgeClass}`}>
-                              {s.tingkat_kesulitan}
+                    <div key={t.topik_id} style={{ borderBottom: '2.5px solid #000000' }}>
+                      {/* Accordion Header */}
+                      <div 
+                        onClick={() => toggleTopic(t.topik_id)}
+                        style={{
+                          padding: '18px 24px',
+                          background: 'var(--bg-card-hover)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          userSelect: 'none',
+                          borderBottom: isExpanded ? '2.5px solid #000000' : 'none',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                      >
+                        <div style={{ flex: 1, marginRight: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: '800', textTransform: 'uppercase', color: 'white', margin: 0, fontFamily: 'Outfit' }}>
+                              {t.nama_topik}
+                            </h3>
+                            <span className="brutal-badge brutal-badge-blue" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                              ID: {t.topik_id}
                             </span>
                           </div>
-                          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: '12px 0 0 0', color: 'white', fontFamily: 'Outfit', textTransform: 'uppercase' }}>
-                            {s.judul_soal || 'Tanpa Judul'}
-                          </h3>
+                          {t.deskripsi && (
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', fontWeight: '600' }}>
+                              {t.deskripsi}
+                            </p>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            onClick={() => handleEditClick(s)}
-                            className="btn btn-secondary"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            title="Edit Soal"
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteClick(s.soal_id)}
-                            className="btn btn-danger"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                            title="Hapus Soal"
-                          >
-                            Hapus
-                          </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                            {count} Soal
+                          </span>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '800' }}>
+                            {isExpanded ? '▲' : '▼'}
+                          </span>
                         </div>
                       </div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontWeight: '500' }}>
-                        {s.deskripsi_soal}
-                      </div>
-                      
-                      {s.testcases && s.testcases.length > 0 && (
-                        <div style={{ marginTop: '16px', padding: '12px 16px', background: '#000000', borderRadius: '4px', border: '2px solid #000000', boxShadow: '2px 2px 0px #000000' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', fontWeight: '800' }}>Expected Output (Terminal):</div>
-                          <code style={{ fontSize: '0.9rem', color: 'var(--success-color)', fontWeight: '700' }}>{s.testcases[0].expected_output}</code>
+
+                      {/* Accordion Content (List of Questions in Topic) */}
+                      {isExpanded && (
+                        <div style={{ background: '#0D0D11' }}>
+                          {count === 0 ? (
+                            <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>
+                              Belum ada soal terdaftar untuk topik ini. Silakan klik "Tambah Soal Baru" untuk mengisi.
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              {questionsInTopik.map((s, index) => {
+                                const diffBadgeClass = s.tingkat_kesulitan === 'Mudah' ? 'success' : s.tingkat_kesulitan === 'Sedang' ? 'yellow' : 'danger';
+                                return (
+                                  <div 
+                                    key={s.soal_id} 
+                                    style={{ 
+                                      padding: '24px 30px', 
+                                      borderBottom: index === count - 1 ? 'none' : '1.5px solid #2D2D35',
+                                      background: '#08080A'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '15px' }}>
+                                      <div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                                          <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.65rem', padding: '1px 5px' }}>ID: {s.soal_id}</span>
+                                          <span className={`brutal-badge brutal-badge-${diffBadgeClass}`} style={{ fontSize: '0.65rem', padding: '1px 5px' }}>
+                                            {s.tingkat_kesulitan}
+                                          </span>
+                                        </div>
+                                        <h4 style={{ fontSize: '1.1rem', fontWeight: '800', margin: '8px 0 0 0', color: 'white', fontFamily: 'Outfit', textTransform: 'uppercase' }}>
+                                          {s.judul_soal || 'Tanpa Judul'}
+                                        </h4>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                          onClick={() => handleEditClick(s)}
+                                          className="btn btn-secondary"
+                                          style={{ padding: '5px 12px', fontSize: '0.75rem', boxShadow: '1.5px 1.5px 0px #000000' }}
+                                          title="Edit Soal"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button 
+                                          onClick={() => handleDeleteClick(s.soal_id)}
+                                          className="btn btn-danger"
+                                          style={{ padding: '5px 12px', fontSize: '0.75rem', boxShadow: '1.5px 1.5px 0px #000000' }}
+                                          title="Hapus Soal"
+                                        >
+                                          Hapus
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontWeight: '500' }}>
+                                      {s.deskripsi_soal}
+                                    </div>
+                                    
+                                    {s.testcases && s.testcases.length > 0 && (
+                                      <div style={{ marginTop: '14px', padding: '10px 14px', background: '#000000', borderRadius: '4px', border: '1.5px solid #1F1F24', display: 'inline-block', boxShadow: '1.5px 1.5px 0px #000000' }}>
+                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase', fontWeight: '800' }}>Expected Output:</span>
+                                        <code style={{ fontSize: '0.85rem', color: 'var(--success-color)', fontWeight: '700' }}>{s.testcases[0].expected_output}</code>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

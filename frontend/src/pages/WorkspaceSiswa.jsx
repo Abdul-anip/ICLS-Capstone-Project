@@ -29,6 +29,8 @@ function WorkspaceSiswa() {
   const [activeSoal, setActiveSoal] = useState(null);
   const [bktProb, setBktProb] = useState(0.1);
   const [attempts, setAttempts] = useState([]);
+  const [isLockedError, setIsLockedError] = useState(false);
+  const [lockedMessage, setLockedMessage] = useState('');
   const [isLoadingSoal, setIsLoadingSoal] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,6 +48,8 @@ function WorkspaceSiswa() {
 
   const fetchSoalDetail = async () => {
     setIsLoadingSoal(true);
+    setIsLockedError(false);
+    setLockedMessage('');
     try {
       const res = await axios.get(`${API}/api/soal/siswa/${user.user_id}/soal/${soalId}`);
       const data = res.data;
@@ -56,7 +60,12 @@ function WorkspaceSiswa() {
       setOutput('');
     } catch (error) {
       console.error('Gagal mengambil detail soal:', error);
-      setOutput('Error: Gagal mengambil detail soal dari server.');
+      if (error.response && error.response.status === 403) {
+        setIsLockedError(true);
+        setLockedMessage(error.response.data.detail || 'Soal ini masih terkunci.');
+      } else {
+        setOutput('Error: Gagal mengambil detail soal dari server.');
+      }
     } finally {
       setIsLoadingSoal(false);
     }
@@ -167,6 +176,19 @@ function WorkspaceSiswa() {
       {isLoadingSoal ? (
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
           <div style={{ fontSize: '1.2rem', fontWeight: '700' }}>Memuat Ruang Koding...</div>
+        </div>
+      ) : isLockedError ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '24px', padding: '30px' }} className="animate-fade-in">
+          <div className="glass-panel" style={{ maxWidth: '500px', padding: '40px', textAlign: 'center', background: 'var(--bg-card)', border: '2.5px solid #000000', boxShadow: 'var(--brutal-shadow-hover)', borderRadius: '6px' }}>
+            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🔒</span>
+            <h2 style={{ fontSize: '1.4rem', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase', marginBottom: '12px' }}>Akses Ditolak</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '24px', fontWeight: '600' }}>
+              {lockedMessage}
+            </p>
+            <button className="btn btn-primary" onClick={() => navigate('/siswa/dashboard')} style={{ padding: '8px 24px', fontSize: '0.88rem' }}>
+              Kembali ke Beranda
+            </button>
+          </div>
         </div>
       ) : !activeSoal ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
