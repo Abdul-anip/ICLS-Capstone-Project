@@ -24,6 +24,7 @@ function DashboardSiswa() {
   const [history, setHistory] = useState([]);
   const [rekomendasi, setRekomendasi] = useState([]);
   const [selectedTopic, setSelectedTopic] = useState('Semua');
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +80,9 @@ function DashboardSiswa() {
   const filteredQuestions = selectedTopic === 'Semua'
     ? soalList
     : (groupedSoal[selectedTopic]?.list || []);
+
+  // Filter riwayat yang akan ditampilkan (tampilkan 5 terakhir secara default)
+  const displayedHistory = showAllHistory ? history : history.slice(0, 5);
 
   // Hitung rata-rata BKT siswa
   const avgProgress = bktRawStats.length > 0
@@ -409,53 +413,103 @@ function DashboardSiswa() {
             )}
           </div>
 
-          {/* ── Section: Riwayat Submit Kode Global ── */}
+          {/* ── Section: Riwayat Submit Kode Global (Aktivitas Terbaru) ── */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>Riwayat Pengerjaan Kode Global</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', fontWeight: '600' }}>
-                Daftar lengkap semua submit koding yang pernah Anda lakukan.
-              </p>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>⏳ Aktivitas Terbaru</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', fontWeight: '600' }}>
+                  Riwayat pengerjaan soal dan status submit terakhir Anda.
+                </p>
+              </div>
+              {history.length > 5 && (
+                <button
+                  onClick={() => setShowAllHistory(!showAllHistory)}
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 14px', fontSize: '0.75rem', textTransform: 'uppercase' }}
+                >
+                  {showAllHistory ? 'Sembunyikan' : `Lihat Semua (${history.length})`}
+                </button>
+              )}
             </div>
 
             {history.length === 0 ? (
               <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                Belum ada riwayat submit kode.
+                Belum ada riwayat aktivitas pengerjaan soal.
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="brutal-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '20%' }}>Waktu Submit</th>
-                      <th style={{ width: '45%' }}>Latihan / Soal</th>
-                      <th style={{ width: '20%' }}>Status Compile</th>
-                      <th style={{ width: '15%' }}>Hasil Pengujian</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map(item => (
-                      <tr key={item.evaluasi_id}>
-                        <td style={{ fontSize: '0.8rem', fontWeight: '600' }}>
-                          {new Date(item.timestamp).toLocaleString('id-ID')}
-                        </td>
-                        <td style={{ fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-                          {item.deskripsi_soal}
-                        </td>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                          {item.status_compile}
-                        </td>
-                        <td>
-                          {item.binary_result === 1 ? (
-                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem' }}>Benar</span>
-                          ) : (
-                            <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.65rem' }}>Salah</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {displayedHistory.map(item => {
+                  const isSuccess = item.binary_result === 1;
+                  return (
+                    <div
+                      key={item.evaluasi_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 20px',
+                        background: '#08080A',
+                        border: '1.5px solid #000000',
+                        borderRadius: '4px',
+                        flexWrap: 'wrap',
+                        gap: '15px',
+                        boxShadow: '1.5px 1.5px 0px #000000'
+                      }}
+                    >
+                      {/* Left side: Icon + Info */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '200px' }}>
+                        {/* Status Icon */}
+                        <div
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            border: '1.5px solid #000000',
+                            background: isSuccess ? 'var(--success-color)' : 'var(--danger-color)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.85rem',
+                            color: '#000000',
+                            fontWeight: '800',
+                            flexShrink: 0
+                          }}
+                        >
+                          {isSuccess ? '✓' : '✗'}
+                        </div>
+                        
+                        <div>
+                          <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#FFF', textTransform: 'uppercase' }}>
+                            {item.deskripsi_soal}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                              {new Date(item.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>•</span>
+                            <span style={{ 
+                              fontFamily: 'monospace', 
+                              fontSize: '0.72rem', 
+                              color: isSuccess ? 'var(--success-color)' : 'var(--danger-color)',
+                              background: 'rgba(0,0,0,0.3)',
+                              padding: '1px 6px',
+                              borderRadius: '2px',
+                              border: '1px solid #000000'
+                            }}>
+                              {item.status_compile}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right side: Badge status */}
+                      <span className={`brutal-badge ${isSuccess ? 'brutal-badge-success' : 'brutal-badge-danger'}`} style={{ fontSize: '0.62rem', padding: '2px 8px' }}>
+                        {isSuccess ? 'BERHASIL' : 'GAGAL'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
