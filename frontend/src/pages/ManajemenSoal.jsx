@@ -208,7 +208,7 @@ function ManajemenSoal() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <Navbar role="dosen" />
+      <Navbar role="dosen" activePage="soal" />
       
       <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
         

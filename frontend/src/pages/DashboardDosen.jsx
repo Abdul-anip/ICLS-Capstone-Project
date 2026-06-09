@@ -71,7 +71,7 @@ function DashboardDosen() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <Navbar role="dosen" />
+      <Navbar role="dosen" activePage="dashboard" />
 
       <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto' }}>
 
