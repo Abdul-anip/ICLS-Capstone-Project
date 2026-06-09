@@ -76,7 +76,7 @@ function WorkspaceSiswa() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isTest = false) => {
     if (!activeSoal) return;
     
     const template = LANGUAGES[activeLang]?.template || '';
@@ -94,46 +94,60 @@ function WorkspaceSiswa() {
     }
     
     setIsLoading(true);
-    setOutput('Mengkompilasi dan mencocokkan dengan test case...');
+    setOutput(isTest ? 'Menguji coba kompilasi kode...' : 'Mengkompilasi dan mencocokkan dengan test case untuk submit final...');
     
     try {
       const response = await axios.post(`${API}/api/evaluasi/submit`, {
         siswa_id: user.user_id,
         soal_id: activeSoal.soal_id,
         source_code: code,
-        language_id: activeLang
+        language_id: activeLang,
+        is_test: isTest
       });
       
       const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate } = response.data;
 
       let outText = '';
 
-      if (is_duplicate) {
-        outText += `PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
+      if (isTest) {
+        outText = `[UJI COBA RUN]\n`;
         outText += `─────────────────────────────────────────────\n`;
-        outText += `Tingkat Pemahaman (BKT) tidak diperbarui.\n`;
-        outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
-        outText += `Hasil submit sebelumnya:\n`;
         outText += `Status: ${status_compile}\n`;
-        outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}`;
-      } else {
-        outText = `Status: ${status_compile}\n`;
         outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}\n\n`;
-        outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}`;
+        outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}\n\n`;
+        outText += `(BKT tidak diperbarui pada mode Uji Coba)`;
+      } else {
+        if (is_duplicate) {
+          outText += `PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
+          outText += `─────────────────────────────────────────────\n`;
+          outText += `Tingkat Pemahaman (BKT) tidak diperbarui.\n`;
+          outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
+          outText += `Hasil submit sebelumnya:\n`;
+          outText += `Status: ${status_compile}\n`;
+          outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}`;
+        } else {
+          outText = `[SUBMIT FINAL]\n`;
+          outText += `─────────────────────────────────────────────\n`;
+          outText += `Status: ${status_compile}\n`;
+          outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}\n\n`;
+          outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}`;
 
-        // Tambahkan ke riwayat lokal jika bukan duplikat
-        const newAttempt = {
-          evaluasi_id: Date.now(),
-          status_compile: status_compile,
-          binary_result: is_correct ? 1 : 0,
-          timestamp: new Date().toISOString(),
-          source_code: code
-        };
-        setAttempts(prev => [newAttempt, ...prev]);
+          // Tambahkan ke riwayat lokal jika bukan duplikat dan ini submit final
+          const newAttempt = {
+            evaluasi_id: Date.now(),
+            status_compile: status_compile,
+            binary_result: is_correct ? 1 : 0,
+            timestamp: new Date().toISOString(),
+            source_code: code
+          };
+          setAttempts(prev => [newAttempt, ...prev]);
+        }
       }
       
       setOutput(outText);
-      setBktProb(new_knowledge_state);
+      if (!isTest) {
+        setBktProb(new_knowledge_state);
+      }
       
     } catch (error) {
       if (error.response?.data?.detail) {
@@ -314,9 +328,26 @@ function WorkspaceSiswa() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Ctrl+Enter untuk submit</span>
-                  <button id="btn-submit-code" className="btn btn-primary" onClick={handleSubmit} disabled={isLoading} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                    {isLoading ? 'Mengevaluasi...' : 'Jalankan & Submit'}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                    Ctrl+Enter (Run) | Ctrl+Shift+Enter (Submit)
+                  </span>
+                  <button 
+                    id="btn-run-code" 
+                    className="btn btn-secondary" 
+                    onClick={() => handleSubmit(true)} 
+                    disabled={isLoading} 
+                    style={{ padding: '8px 16px', fontSize: '0.85rem', color: '#FFFFFF', boxShadow: '2px 2px 0px #000000' }}
+                  >
+                    {isLoading ? 'Running...' : 'Uji Coba Run'}
+                  </button>
+                  <button 
+                    id="btn-submit-code" 
+                    className="btn btn-primary" 
+                    onClick={() => handleSubmit(false)} 
+                    disabled={isLoading} 
+                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  >
+                    {isLoading ? 'Submitting...' : 'Submit Final'}
                   </button>
                 </div>
               </div>
@@ -331,12 +362,25 @@ function WorkspaceSiswa() {
                   theme="vs-dark"
                   onMount={(editor, monaco) => {
                     editorRef.current = editor;
-                    // Shortcut Ctrl+Enter untuk submit
+                    
+                    // Shortcut Ctrl+Enter untuk Uji Coba Run
                     editor.addAction({
-                      id: 'submit-code',
-                      label: 'Jalankan & Submit',
+                      id: 'run-code',
+                      label: 'Uji Coba Run',
                       keybindings: [
                         monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter
+                      ],
+                      run: () => {
+                        document.getElementById('btn-run-code')?.click();
+                      }
+                    });
+
+                    // Shortcut Ctrl+Shift+Enter untuk Submit Final
+                    editor.addAction({
+                      id: 'submit-code',
+                      label: 'Submit Final',
+                      keybindings: [
+                        monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter
                       ],
                       run: () => {
                         document.getElementById('btn-submit-code')?.click();

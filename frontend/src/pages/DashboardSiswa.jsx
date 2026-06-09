@@ -285,11 +285,11 @@ function DashboardSiswa() {
                               {/* Solved Status Badge */}
                               {soal.is_solved ? (
                                 <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                                  Selesai ✅
+                                  Selesai
                                 </span>
                               ) : (
                                 <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                                  Belum Dikerjakan 📝
+                                  Belum Dikerjakan
                                 </span>
                               )}
 
@@ -315,7 +315,7 @@ function DashboardSiswa() {
           {/* ── Section: Riwayat Submit Kode Global ── */}
           <div className="glass-panel" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>📜 Riwayat Pengerjaan Kode Global</h2>
+              <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>Riwayat Pengerjaan Kode Global</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', fontWeight: '600' }}>
                 Daftar lengkap semua submit koding yang pernah Anda lakukan.
               </p>
@@ -350,9 +350,9 @@ function DashboardSiswa() {
                         </td>
                         <td>
                           {item.binary_result === 1 ? (
-                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem' }}>Benar ✅</span>
+                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.65rem' }}>Benar</span>
                           ) : (
-                            <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.65rem' }}>Salah ❌</span>
+                            <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.65rem' }}>Salah</span>
                           )}
                         </td>
                       </tr>

@@ -154,6 +154,7 @@ class CodeSubmit(BaseModel):
     soal_id: int
     source_code: str
     language_id: int  # ID bahasa untuk Judge0 (contoh: 71 untuk Python)
+    is_test: Optional[bool] = False
 
 class CodeEvaluationResponse(BaseModel):
     status_compile: str
