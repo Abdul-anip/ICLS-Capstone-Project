@@ -15,7 +15,7 @@ class BKTModel:
             return 0.05, 0.20   # guess sangat rendah, slip tinggi
         return self.guess_rate, self.slip_rate
 
-    def update_knowledge_state(self, current_prob: float, is_correct: bool, tingkat_kesulitan: str = None) -> float:
+    def update_knowledge_state(self, current_prob: float, is_correct: bool, tingkat_kesulitan: str = None, num_soal: int = None) -> float:
         """
         Menghitung Probabilitas Knowledge State yang baru P(Ln) menggunakan formula standar Bayesian Knowledge Tracing.
         Parameter Guess dan Slip menyesuaikan dengan tingkat kesulitan soal secara dinamis.
@@ -23,6 +23,12 @@ class BKTModel:
         is_correct = False (Observasi = 0, gagal)
         """
         guess, slip = self._get_params(tingkat_kesulitan)
+
+        # Hitung transition_rate dinamis berdasarkan jumlah soal
+        transition = self.transition_rate
+        if num_soal is not None and num_soal > 0:
+            # Formula dinamis: P(T) = 0.6 / N, dibatasi min 0.05 dan max 0.45
+            transition = max(0.05, min(0.45, 0.6 / num_soal))
 
         if is_correct:
             # P(L_n | Obs=1)
@@ -37,11 +43,11 @@ class BKTModel:
         p_l_given_obs = numerator / denominator if denominator > 0 else 0
 
         # Menghitung probabilitas penguasaan di waktu berikutnya (P(L_{n+1}))
-        new_knowledge_prob = p_l_given_obs + ((1 - p_l_given_obs) * self.transition_rate)
+        new_knowledge_prob = p_l_given_obs + ((1 - p_l_given_obs) * transition)
 
         return round(new_knowledge_prob, 4)
 
-    def predict_mastery_attempts(self, current_prob: float, tingkat_kesulitan: str = "Mudah", threshold: float = 0.95) -> int:
+    def predict_mastery_attempts(self, current_prob: float, tingkat_kesulitan: str = "Mudah", threshold: float = 0.95, num_soal: int = None) -> int:
         """
         Mensimulasikan berapa banyak submit BENAR yang dibutuhkan agar P(L) mencapai threshold (default 0.95).
         Menggunakan tingkat kesulitan soal terbanyak di topik tersebut (default Mudah jika tidak diketahui).
@@ -52,7 +58,7 @@ class BKTModel:
         max_iter = 50
 
         while p < threshold and attempts < max_iter:
-            p = self.update_knowledge_state(p, is_correct=True, tingkat_kesulitan=tingkat_kesulitan)
+            p = self.update_knowledge_state(p, is_correct=True, tingkat_kesulitan=tingkat_kesulitan, num_soal=num_soal)
             attempts += 1
 
         # Jika tidak pernah konvergen (sangat jarang), kembalikan 50
@@ -77,14 +83,14 @@ class BKTModel:
 bkt_engine = BKTModel()
 
 
-def calculate_new_state(current_prob: float, is_correct: bool, tingkat_kesulitan: str = None) -> float:
-    """Wrapper function untuk diekspos ke controller dengan dukungan parameter kesulitan"""
-    return bkt_engine.update_knowledge_state(current_prob, is_correct, tingkat_kesulitan)
+def calculate_new_state(current_prob: float, is_correct: bool, tingkat_kesulitan: str = None, num_soal: int = None) -> float:
+    """Wrapper function untuk diekspos ke controller dengan dukungan parameter kesulitan dan jumlah soal"""
+    return bkt_engine.update_knowledge_state(current_prob, is_correct, tingkat_kesulitan, num_soal)
 
 
-def predict_mastery_attempts(current_prob: float, tingkat_kesulitan: str = "Mudah") -> int:
-    """Wrapper: Prediksi berapa submit benar diperlukan untuk menguasai topik ini."""
-    return bkt_engine.predict_mastery_attempts(current_prob, tingkat_kesulitan)
+def predict_mastery_attempts(current_prob: float, tingkat_kesulitan: str = "Mudah", num_soal: int = None) -> int:
+    """Wrapper: Prediksi berapa submit benar diperlukan untuk menguasai topik ini dengan transition_rate dinamis."""
+    return bkt_engine.predict_mastery_attempts(current_prob, tingkat_kesulitan, num_soal=num_soal)
 
 
 def get_recommendation_score(learned_prob: float) -> float:

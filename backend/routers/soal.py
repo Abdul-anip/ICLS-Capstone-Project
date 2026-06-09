@@ -354,8 +354,8 @@ def get_rekomendasi_topik(user_id: int, db: Session = Depends(get_db)):
                 tingkat_counts[s.tingkat_kesulitan] += 1
         tingkat_dominan = max(tingkat_counts, key=tingkat_counts.get)
 
-        # Prediksi berapa submit benar diperlukan untuk menguasai topik
-        estimasi_submit = predict_mastery_attempts(learned_prob, tingkat_dominan)
+        # Prediksi berapa submit benar diperlukan untuk menguasai topik dengan transition_rate dinamis
+        estimasi_submit = predict_mastery_attempts(learned_prob, tingkat_dominan, num_soal=len(soal_list))
 
         # Hitung skor rekomendasi
         skor = get_recommendation_score(learned_prob)

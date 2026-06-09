@@ -142,11 +142,24 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
                 should_update_bkt = True
 
         if should_update_bkt:
-            # Kalkulasi Knowledge State baru berdasarkan tingkat kesulitan soal
+            # Hitung jumlah soal aktif dalam topik ini untuk BKT dinamis (hanya dari dosen instansi siswa yang sama)
+            siswa = db.query(models.User).filter(models.User.user_id == submission.siswa_id).first()
+            dosen_instansi = db.query(models.User.user_id).filter(
+                models.User.instansi_id == siswa.instansi_id,
+                models.User.role == 'dosen'
+            ).subquery()
+
+            num_soal = db.query(models.Soal).filter(
+                models.Soal.topik_id == soal.topik_id,
+                models.Soal.dosen_id.in_(dosen_instansi)
+            ).count()
+
+            # Kalkulasi Knowledge State baru berdasarkan tingkat kesulitan soal dan jumlah soal
             new_knowledge_prob = calculate_new_state(
                 current_prob=current_prob, 
                 is_correct=is_correct, 
-                tingkat_kesulitan=soal.tingkat_kesulitan
+                tingkat_kesulitan=soal.tingkat_kesulitan,
+                num_soal=num_soal
             )
 
             # Simpan atau update state BKT ke database
