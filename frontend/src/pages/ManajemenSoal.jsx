@@ -1,8 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 
 const API = 'http://localhost:8000';
+
+function CustomSelect({ label, value, onChange, options, placeholder = 'Pilih opsi...', style = {} }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef(null);
+  
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsideClick = (e) => {
+      if (selectRef.current && !selectRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={selectRef} className="input-group" style={{ position: 'relative', ...style }}>
+      <label className="input-label">{label}</label>
+      <div 
+        onClick={handleToggle}
+        className="input-field"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          backgroundColor: '#08080A',
+          color: '#FFFFFF',
+          fontWeight: '600',
+          userSelect: 'none',
+          borderColor: isOpen ? 'var(--accent-color)' : 'initial',
+          boxShadow: isOpen ? '3px 3px 0px #000000' : 'initial',
+          transform: isOpen ? 'translate(-1px, -1px)' : 'initial',
+        }}
+      >
+        <span>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <svg 
+          width="16" 
+          height="16" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="3" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          style={{
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+            color: isOpen ? 'var(--accent-color)' : 'var(--text-secondary)'
+          }}
+        >
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          backgroundColor: '#18181C',
+          border: '2.5px solid #000000',
+          borderRadius: '4px',
+          boxShadow: '4px 4px 0px #000000',
+          zIndex: 1000,
+          maxHeight: '200px',
+          overflowY: 'auto',
+          marginTop: '4px'
+        }}>
+          {options.length === 0 ? (
+            <div style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>
+              Tidak ada opsi tersedia
+            </div>
+          ) : (
+            options.map((opt) => {
+              const isSelected = String(opt.value) === String(value);
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => handleSelect(opt.value)}
+                  style={{
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: isSelected ? '700' : '500',
+                    color: isSelected ? '#000000' : '#FFFFFF',
+                    backgroundColor: isSelected ? 'var(--accent-color)' : 'transparent',
+                    borderBottom: '1.5px solid #2D2D35',
+                    transition: 'all 0.1s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)';
+                      e.currentTarget.style.color = 'var(--accent-color)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#FFFFFF';
+                    }
+                  }}
+                >
+                  {opt.label}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ManajemenSoal() {
   const [soalList, setSoalList] = useState([]);
@@ -404,27 +532,26 @@ function ManajemenSoal() {
 
               <form onSubmit={handleSubmit}>
                 <div style={{ display: 'flex', gap: '20px' }}>
-                  <div className="input-group" style={{ flex: 1 }}>
-                    <label className="input-label">Topik Materi</label>
-                    <select className="input-field" value={topikId} onChange={e => setTopikId(e.target.value)} style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                      {topikList.length === 0 ? (
-                        <option value="">Memuat topik...</option>
-                      ) : (
-                        topikList.map(t => (
-                          <option key={t.topik_id} value={t.topik_id}>{t.topik_id} - {t.nama_topik}</option>
-                        ))
-                      )}
-                    </select>
-                  </div>
+                  <CustomSelect
+                    label="Topik Materi"
+                    value={topikId}
+                    onChange={setTopikId}
+                    options={topikList.map(t => ({ value: t.topik_id, label: `ID: ${t.topik_id} — ${t.nama_topik}` }))}
+                    placeholder={topikList.length === 0 ? "Memuat topik..." : "Pilih Topik Materi..."}
+                    style={{ flex: 1 }}
+                  />
 
-                  <div className="input-group" style={{ flex: 1 }}>
-                    <label className="input-label">Tingkat Kesulitan</label>
-                    <select className="input-field" value={kesulitan} onChange={e => setKesulitan(e.target.value)} style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                      <option value="Mudah">Mudah</option>
-                      <option value="Sedang">Sedang</option>
-                      <option value="Sulit">Sulit</option>
-                    </select>
-                  </div>
+                  <CustomSelect
+                    label="Tingkat Kesulitan"
+                    value={kesulitan}
+                    onChange={setKesulitan}
+                    options={[
+                      { value: 'Mudah', label: 'Mudah' },
+                      { value: 'Sedang', label: 'Sedang' },
+                      { value: 'Sulit', label: 'Sulit' }
+                    ]}
+                    style={{ flex: 1 }}
+                  />
                 </div>
 
                 <div className="input-group">
