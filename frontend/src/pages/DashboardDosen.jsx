@@ -85,6 +85,45 @@ function DashboardDosen() {
     }
   };
 
+  const [namaKelasBaru, setNamaKelasBaru] = useState('');
+  const [isAddingKelas, setIsAddingKelas] = useState(false);
+  const [kelasError, setKelasError] = useState('');
+
+  const handleTambahKelas = async () => {
+    if (!namaKelasBaru.trim()) return;
+    setIsAddingKelas(true);
+    setKelasError('');
+    try {
+      const res = await fetch(`${API}/api/kelas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama_kelas: namaKelasBaru.trim(),
+          instansi_id: user.instansi_id
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNamaKelasBaru('');
+        // Reload daftar kelas di instansi
+        const resAll = await fetch(`${API}/api/kelas/instansi?instansi_id=${user.instansi_id}`);
+        if (resAll.ok) {
+          const classes = await resAll.json();
+          setAllInstansiKelas(classes);
+          // Otomatis centang kelas yang baru dibuat
+          setTempSelectedClasses([...tempSelectedClasses, data.kelas_id]);
+        }
+      } else {
+        setKelasError(data.detail || 'Gagal menambahkan kelas baru.');
+      }
+    } catch (e) {
+      console.error('Gagal menambahkan kelas:', e);
+      setKelasError('Tidak dapat terhubung ke server.');
+    } finally {
+      setIsAddingKelas(false);
+    }
+  };
+
   const fetchStats = async () => {
     setIsLoadingStats(true);
     try {
@@ -463,6 +502,42 @@ function DashboardDosen() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '20px', fontWeight: '600', lineHeight: '1.5' }}>
                 Pilih kelas-kelas yang Anda ampu di <strong>{user?.nama_instansi}</strong>. Dashboard Anda hanya akan menampilkan perkembangan siswa dari kelas terpilih.
               </p>
+
+              {/* Form Tambah Kelas Baru */}
+              <div style={{ 
+                marginBottom: '24px', 
+                padding: '16px', 
+                background: 'var(--bg-card-hover)', 
+                border: '2px solid #000000', 
+                borderRadius: '4px',
+                boxShadow: '2px 2px 0px #000000'
+              }}>
+                <label className="input-label" style={{ marginBottom: '6px', fontSize: '0.75rem' }}>Tambah Kelas Baru</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Contoh: XII RPL 3"
+                    value={namaKelasBaru}
+                    onChange={(e) => setNamaKelasBaru(e.target.value)}
+                    style={{ padding: '8px 12px', fontSize: '0.9rem', flex: 1 }}
+                    disabled={isAddingKelas}
+                  />
+                  <button
+                    onClick={handleTambahKelas}
+                    className="btn btn-primary"
+                    style={{ padding: '8px 16px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                    disabled={isAddingKelas || !namaKelasBaru.trim()}
+                  >
+                    {isAddingKelas ? 'Menambahkan...' : '+ Tambah'}
+                  </button>
+                </div>
+                {kelasError && (
+                  <div style={{ color: 'var(--danger-color)', fontSize: '0.75rem', marginTop: '6px', fontWeight: 'bold' }}>
+                    {kelasError}
+                  </div>
+                )}
+              </div>
 
               {allInstansiKelas.length === 0 ? (
                 <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '600' }}>
