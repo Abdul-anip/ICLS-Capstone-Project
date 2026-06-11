@@ -10,7 +10,7 @@ function ProfilAkun() {
   const [isLoading, setIsLoading] = useState(true);
 
   // State untuk Update Profil
-  const [formProfil, setFormProfil] = useState({ nama_lengkap: '', nama_kelas: '' });
+  const [formProfil, setFormProfil] = useState({ nama_lengkap: '' });
   const [statusProfil, setStatusProfil] = useState({ type: '', msg: '' }); // type: 'success' | 'error'
   const [isUpdatingProfil, setIsUpdatingProfil] = useState(false);
 
@@ -28,8 +28,7 @@ function ProfilAkun() {
     const parsedUser = JSON.parse(rawUser);
     setUser(parsedUser);
     setFormProfil({
-      nama_lengkap: parsedUser.nama_lengkap || '',
-      nama_kelas: parsedUser.nama_kelas || ''
+      nama_lengkap: parsedUser.nama_lengkap || ''
     });
     setIsLoading(false);
   }, [navigate]);
@@ -44,8 +43,7 @@ function ProfilAkun() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nama_lengkap: formProfil.nama_lengkap,
-          nama_kelas: user.role === 'siswa' ? formProfil.nama_kelas : null
+          nama_lengkap: formProfil.nama_lengkap
         })
       });
 
@@ -57,6 +55,7 @@ function ProfilAkun() {
         // Update local storage
         localStorage.setItem('user', JSON.stringify(data));
         setUser(data);
+        setFormProfil({ nama_lengkap: data.nama_lengkap || '' });
         setTimeout(() => setStatusProfil({ type: '', msg: '' }), 4000);
       }
     } catch (e) {
@@ -161,8 +160,20 @@ function ProfilAkun() {
               
               <div className="input-group">
                 <label className="input-label">Instansi</label>
-                <input className="input-field" value={user.nama_instansi} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                <input className="input-field" value={user.nama_instansi || '-'} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
               </div>
+
+              {user.role === 'siswa' && (
+                <div className="input-group">
+                  <label className="input-label">Kelas <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '400' }}>(Tidak bisa diubah sendiri)</span></label>
+                  <input
+                    className="input-field"
+                    value={user.nama_kelas || 'Belum terdaftar di kelas'}
+                    disabled
+                    style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                  />
+                </div>
+              )}
 
               <div className="input-group">
                 <label className="input-label">Nama Lengkap</label>
@@ -170,15 +181,6 @@ function ProfilAkun() {
                   onChange={e => setFormProfil({ ...formProfil, nama_lengkap: e.target.value })} 
                   required disabled={isUpdatingProfil} />
               </div>
-
-              {user.role === 'siswa' && (
-                <div className="input-group">
-                  <label className="input-label">Nama Kelas <span style={{ color: 'var(--text-secondary)' }}>(Opsional)</span></label>
-                  <input className="input-field" value={formProfil.nama_kelas} 
-                    onChange={e => setFormProfil({ ...formProfil, nama_kelas: e.target.value })} 
-                    disabled={isUpdatingProfil} />
-                </div>
-              )}
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px', opacity: isUpdatingProfil ? 0.7 : 1 }} disabled={isUpdatingProfil}>
                 {isUpdatingProfil ? 'Menyimpan...' : 'Simpan Perubahan'}

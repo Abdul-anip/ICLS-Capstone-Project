@@ -47,7 +47,7 @@ function Register() {
       }
     };
 
-    if (formData.kode_instansi.trim().length >= 4) {
+    if (formData.kode_instansi.trim().length >= 3) {
       fetchKelas();
     } else {
       setKelasList([]);
@@ -56,7 +56,9 @@ function Register() {
   }, [formData.kode_instansi]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Pastikan kode_instansi selalu disimpan dalam huruf kapital
+    setFormData({ ...formData, [name]: name === 'kode_instansi' ? value.toUpperCase() : value });
   };
 
   const handleRegister = async (e) => {
@@ -227,7 +229,7 @@ function Register() {
 
           <div className="input-group">
             <label className="input-label">Kelas Anda</label>
-            {formData.kode_instansi.trim().length < 4 ? (
+            {formData.kode_instansi.trim().length < 3 ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '12px 16px', background: '#08080A', border: 'var(--brutal-border)', borderRadius: '4px', fontStyle: 'italic' }}>
                 Masukkan Kode Instansi terlebih dahulu...
               </div>

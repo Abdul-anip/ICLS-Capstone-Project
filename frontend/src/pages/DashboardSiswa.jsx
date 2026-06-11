@@ -164,7 +164,7 @@ function DashboardSiswa() {
             {/* Kolom Kanan: Rekomendasi Topik */}
             <div className="glass-panel" style={{ padding: '24px' }}>
               <div style={{ marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>💡 Rekomendasi Belajar</h2>
+                <h2 style={{ fontSize: '1.2rem', textTransform: 'uppercase', fontFamily: 'Outfit', fontWeight: '800' }}>Rekomendasi Belajar</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', fontWeight: '600' }}>
                   Rekomendasi topik teratas untuk dikerjakan dari mesin cerdas BKT.
                 </p>

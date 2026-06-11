@@ -25,7 +25,7 @@ function WorkspaceSiswa() {
   const [output, setOutput] = useState('');
   const [fontSize, setFontSize] = useState(14);
   const editorRef = useRef(null);
-  
+
   const [activeSoal, setActiveSoal] = useState(null);
   const [bktProb, setBktProb] = useState(0.1);
   const [attempts, setAttempts] = useState([]);
@@ -87,7 +87,7 @@ function WorkspaceSiswa() {
 
   const handleSubmit = async (isTest = false) => {
     if (!activeSoal) return;
-    
+
     const template = LANGUAGES[activeLang]?.template || '';
     const strippedCode = code.trim();
     const strippedTemplate = template.trim();
@@ -101,10 +101,10 @@ function WorkspaceSiswa() {
       setOutput('PERINGATAN: Kode Anda masih berupa template bawaan. Silakan tulis kode solusi Anda terlebih dahulu!');
       return;
     }
-    
+
     setIsLoading(true);
     setOutput(isTest ? 'Menguji coba kompilasi kode...' : 'Mengkompilasi dan mencocokkan dengan test case untuk submit final...');
-    
+
     try {
       const response = await axios.post(`${API}/api/evaluasi/submit`, {
         siswa_id: user.user_id,
@@ -113,7 +113,7 @@ function WorkspaceSiswa() {
         language_id: activeLang,
         is_test: isTest
       });
-      
+
       const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate } = response.data;
 
       let outText = '';
@@ -152,12 +152,12 @@ function WorkspaceSiswa() {
           setAttempts(prev => [newAttempt, ...prev]);
         }
       }
-      
+
       setOutput(outText);
       if (!isTest) {
         setBktProb(new_knowledge_state);
       }
-      
+
     } catch (error) {
       if (error.response?.data?.detail) {
         setOutput(`PERINGATAN: ${error.response.data.detail}`);
@@ -199,17 +199,17 @@ function WorkspaceSiswa() {
         </div>
       ) : (
         <div className="editor-container" style={{ flex: 1, padding: '20px', gap: '20px', display: 'flex', maxWidth: '1400px', margin: '0 auto', width: '100%', overflow: 'hidden' }}>
-          
+
           {/* Kolom Kiri: Detail Soal & Statistik Khusus Soal Ini (35% Lebar) */}
           <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', paddingRight: '5px' }}>
-            
+
             {/* Tombol Navigasi Kembali */}
-            <button 
-              className="btn btn-secondary" 
+            <button
+              className="btn btn-secondary"
               onClick={() => navigate('/siswa/dashboard')}
               style={{ padding: '8px 16px', fontSize: '0.85rem', alignSelf: 'flex-start', boxShadow: '2px 2px 0px #000000' }}
             >
-              ⬅️ KEMBALI KE BERANDA
+              KEMBALI KE BERANDA
             </button>
 
             {/* Panel Detail Soal */}
@@ -227,8 +227,21 @@ function WorkspaceSiswa() {
                   </div>
                 </div>
               </div>
-              
-              <div style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.88rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+
+              <div style={{
+                color: 'var(--text-secondary)',
+                marginBottom: '20px',
+                fontSize: '0.88rem',
+                lineHeight: '1.6',
+                whiteSpace: 'pre-wrap',
+                maxHeight: '220px',
+                overflowY: 'auto',
+                padding: '12px',
+                background: '#08080A',
+                border: '2px solid #000000',
+                borderRadius: '4px',
+                boxShadow: 'inset 2px 2px 0px rgba(0,0,0,0.8)'
+              }}>
                 {activeSoal.deskripsi_soal}
               </div>
 
@@ -242,7 +255,7 @@ function WorkspaceSiswa() {
                     {(bktProb * 100).toFixed(1)}%
                   </div>
                   <div style={{ flex: 1, height: '12px', background: '#000000', border: '1.5px solid #000000', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ 
+                    <div style={{
                       width: `${bktProb * 100}%`, height: '100%', transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
                       background: bktProb > 0.95 ? 'var(--success-color)' : 'var(--accent-blue)',
                       borderRight: bktProb > 0 ? '1.5px solid #000000' : 'none'
@@ -250,12 +263,12 @@ function WorkspaceSiswa() {
                   </div>
                 </div>
                 {bktProb > 0.95 && (
-                  <div style={{ 
+                  <div style={{
                     color: '#000000', background: 'var(--success-color)', border: '1.5px solid #000000',
-                    boxShadow: '1.5px 1.5px 0px #000000', borderRadius: '4px', fontSize: '0.8rem', 
+                    boxShadow: '1.5px 1.5px 0px #000000', borderRadius: '4px', fontSize: '0.8rem',
                     marginTop: '10px', fontWeight: '800', textAlign: 'center', padding: '4px', textTransform: 'uppercase'
                   }}>
-                    Topik Dikuasai! 🎉
+                    Topik Dikuasai!
                   </div>
                 )}
               </div>
@@ -266,7 +279,7 @@ function WorkspaceSiswa() {
               <h3 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '12px', borderBottom: '2px solid #000000', paddingBottom: '6px' }}>
                 Riwayat Submit Soal Ini
               </h3>
-              
+
               {attempts.length === 0 ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center' }}>
                   Belum ada percobaan untuk soal ini. Tulis kodemu di editor sebelah kanan dan jalankan submit!
@@ -274,9 +287,9 @@ function WorkspaceSiswa() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1, paddingRight: '5px' }}>
                   {attempts.map((att, i) => (
-                    <div 
+                    <div
                       key={att.evaluasi_id || i}
-                      style={{ 
+                      style={{
                         background: '#08080A', padding: '10px 14px', borderRadius: '4px',
                         border: '1.5px solid #000000', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                       }}
@@ -296,7 +309,7 @@ function WorkspaceSiswa() {
                           Status: {att.status_compile}
                         </div>
                       </div>
-                      <button 
+                      <button
                         className="btn btn-secondary"
                         onClick={() => loadPreviousCode(att.source_code)}
                         title="Muat kode ini ke editor"
@@ -314,17 +327,17 @@ function WorkspaceSiswa() {
 
           {/* Kolom Kanan: Editor Monaco & Terminal Output (65% Lebar) */}
           <div style={{ width: '65%', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-            
+
             {/* Editor Container */}
             <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              
+
               {/* Toolbar Editor */}
               <div style={{ padding: '8px 16px', background: 'var(--bg-card-hover)', borderBottom: '2.5px solid #000000', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <select 
-                    className="input-field" 
-                    value={activeLang} 
-                    onChange={handleLangChange} 
+                  <select
+                    className="input-field"
+                    value={activeLang}
+                    onChange={handleLangChange}
                     style={{ padding: '6px 12px', fontSize: '0.85rem', width: 'auto', background: 'var(--bg-card)', border: '2.5px solid #000000', borderRadius: '4px', cursor: 'pointer', fontWeight: '800' }}
                   >
                     {Object.entries(LANGUAGES).map(([id, lang]) => (
@@ -332,7 +345,7 @@ function WorkspaceSiswa() {
                     ))}
                   </select>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '700', marginLeft: '6px' }}>{LANGUAGES[activeLang].ext}</span>
-                  
+
                   {/* Font Size Controls */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '12px', borderLeft: '2px solid #000000', paddingLeft: '12px' }}>
                     <button
@@ -353,20 +366,20 @@ function WorkspaceSiswa() {
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
                     Ctrl+Enter (Run) | Ctrl+Shift+Enter (Submit)
                   </span>
-                  <button 
-                    id="btn-run-code" 
-                    className="btn btn-secondary" 
-                    onClick={() => handleSubmit(true)} 
-                    disabled={isLoading} 
+                  <button
+                    id="btn-run-code"
+                    className="btn btn-secondary"
+                    onClick={() => handleSubmit(true)}
+                    disabled={isLoading}
                     style={{ padding: '8px 16px', fontSize: '0.85rem', color: '#FFFFFF', boxShadow: '2px 2px 0px #000000' }}
                   >
                     {isLoading ? 'Running...' : 'Uji Coba Run'}
                   </button>
-                  <button 
-                    id="btn-submit-code" 
-                    className="btn btn-primary" 
-                    onClick={() => handleSubmit(false)} 
-                    disabled={isLoading} 
+                  <button
+                    id="btn-submit-code"
+                    className="btn btn-primary"
+                    onClick={() => handleSubmit(false)}
+                    disabled={isLoading}
                     style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                   >
                     {isLoading ? 'Submitting...' : 'Submit Final'}
@@ -384,7 +397,7 @@ function WorkspaceSiswa() {
                   theme="vs-dark"
                   onMount={(editor, monaco) => {
                     editorRef.current = editor;
-                    
+
                     // Shortcut Ctrl+Enter untuk Uji Coba Run
                     editor.addAction({
                       id: 'run-code',
@@ -445,13 +458,13 @@ function WorkspaceSiswa() {
                 <span>Terminal Output</span>
                 {isLoading && <span style={{ color: 'var(--accent-color)' }}>Loading...</span>}
               </div>
-              <div style={{ 
-                padding: '16px 20px', flex: 1, overflowY: 'auto', 
-                fontFamily: "'Fira Code', monospace", fontSize: '0.85rem', 
+              <div style={{
+                padding: '16px 20px', flex: 1, overflowY: 'auto',
+                fontFamily: "'Fira Code', monospace", fontSize: '0.85rem',
                 color: output.includes('PERINGATAN') ? 'var(--accent-color)'
-                  : output.includes('Error') || output.includes('Tidak') ? 'var(--danger-color)' 
-                  : 'var(--success-color)', 
-                whiteSpace: 'pre-wrap', background: '#08080A' 
+                  : output.includes('Error') || output.includes('Tidak') ? 'var(--danger-color)'
+                    : 'var(--success-color)',
+                whiteSpace: 'pre-wrap', background: '#08080A'
               }}>
                 {output || 'Output program akan muncul di sini setelah submit...'}
               </div>

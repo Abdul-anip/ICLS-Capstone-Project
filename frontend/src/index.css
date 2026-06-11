@@ -269,3 +269,30 @@ h1, h2, h3, h4 {
   outline: none;
   border-color: var(--accent-color);
 }
+
+/* Custom Scrollbar Styles (Sleek Dark Neo Brutalist) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08080A;
+  border-left: 2px solid #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2D2D35;
+  border: 1px solid #000000;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* Firefox Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2D2D35 #08080A;
+}
