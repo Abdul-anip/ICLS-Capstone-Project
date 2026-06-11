@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 function Register() {
@@ -8,12 +8,52 @@ function Register() {
     password: '',
     konfirmasi_password: '',
     kode_instansi: '',
-    nama_kelas: '',
+    kelas_id: '',
   });
+  const [kelasList, setKelasList] = useState([]);
+  const [isLoadingKelas, setIsLoadingKelas] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchKelas = async () => {
+      if (!formData.kode_instansi) {
+        setKelasList([]);
+        return;
+      }
+      setIsLoadingKelas(true);
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/kelas/by-code?kode_instansi=${formData.kode_instansi}`);
+        if (res.ok) {
+          const data = await res.json();
+          setKelasList(data);
+          if (data.length > 0) {
+            setFormData(prev => ({ ...prev, kelas_id: data[0].kelas_id }));
+          } else {
+            setFormData(prev => ({ ...prev, kelas_id: '' }));
+          }
+        } else {
+          setKelasList([]);
+          setFormData(prev => ({ ...prev, kelas_id: '' }));
+        }
+      } catch (err) {
+        console.error('Gagal mengambil kelas:', err);
+        setKelasList([]);
+        setFormData(prev => ({ ...prev, kelas_id: '' }));
+      } finally {
+        setIsLoadingKelas(false);
+      }
+    };
+
+    if (formData.kode_instansi.trim().length >= 4) {
+      fetchKelas();
+    } else {
+      setKelasList([]);
+      setFormData(prev => ({ ...prev, kelas_id: '' }));
+    }
+  }, [formData.kode_instansi]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,7 +81,7 @@ function Register() {
           password: formData.password,
           nama_lengkap: formData.nama_lengkap,
           kode_instansi: formData.kode_instansi,
-          nama_kelas: formData.nama_kelas || null,
+          kelas_id: formData.kelas_id ? parseInt(formData.kelas_id) : null,
         }),
       });
 
@@ -186,17 +226,41 @@ function Register() {
           </div>
 
           <div className="input-group">
-            <label className="input-label">Nama Kelas <span style={{ color: 'var(--text-secondary)' }}>(Opsional)</span></label>
-            <input
-              type="text"
-              name="nama_kelas"
-              id="reg-kelas"
-              className="input-field"
-              placeholder="Contoh: XII RPL 1"
-              value={formData.nama_kelas}
-              onChange={handleChange}
-              disabled={isLoading}
-            />
+            <label className="input-label">Kelas Anda</label>
+            {formData.kode_instansi.trim().length < 4 ? (
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '12px 16px', background: '#08080A', border: 'var(--brutal-border)', borderRadius: '4px', fontStyle: 'italic' }}>
+                Masukkan Kode Instansi terlebih dahulu...
+              </div>
+            ) : isLoadingKelas ? (
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '12px 16px', background: '#08080A', border: 'var(--brutal-border)', borderRadius: '4px' }}>
+                Memuat daftar kelas...
+              </div>
+            ) : kelasList.length === 0 ? (
+              <div style={{ color: 'var(--danger-color)', fontSize: '0.85rem', padding: '12px 16px', background: '#08080A', border: 'var(--brutal-border)', borderRadius: '4px', fontWeight: 'bold' }}>
+                Tidak ada kelas terdaftar di instansi ini. Hubungi Dosen/Admin.
+              </div>
+            ) : (
+              <select
+                name="kelas_id"
+                id="reg-kelas"
+                className="input-field"
+                value={formData.kelas_id}
+                onChange={handleChange}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: '#08080A',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                {kelasList.map(k => (
+                  <option key={k.kelas_id} value={k.kelas_id} style={{ background: '#18181C', color: '#FFF' }}>
+                    {k.nama_kelas}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <button

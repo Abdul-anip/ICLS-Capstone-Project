@@ -52,13 +52,14 @@ class UserRegister(BaseModel):
     password: str
     nama_lengkap: str
     kode_instansi: str       # Siswa mendaftar menggunakan kode instansi
-    nama_kelas: Optional[str] = None
+    kelas_id: Optional[int] = None
 
 class UserLoginResponse(BaseModel):
     user_id: int
     username: str
     nama_lengkap: str
     role: str
+    kelas_id: Optional[int] = None
     nama_kelas: Optional[str] = None
     instansi_id: Optional[int] = None
     nama_instansi: Optional[str] = None
@@ -85,7 +86,7 @@ class AdminDosenCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     nama_lengkap: Optional[str] = None
-    nama_kelas: Optional[str] = None
+    kelas_id: Optional[int] = None
 
 class PasswordChange(BaseModel):
     password_lama: str
@@ -96,6 +97,7 @@ class UserListResponse(BaseModel):
     username: str
     nama_lengkap: str
     role: str
+    kelas_id: Optional[int] = None
     nama_kelas: Optional[str] = None
     instansi_id: Optional[int] = None
 
@@ -175,3 +177,24 @@ class EvaluasiHistoryResponse(BaseModel):
     status_compile: str
     binary_result: int
     timestamp: datetime
+
+
+# ─────────────────────────────────────────
+# Skema Kelas
+# ─────────────────────────────────────────
+
+class KelasCreate(BaseModel):
+    nama_kelas: str
+    instansi_id: int
+
+class KelasResponse(BaseModel):
+    kelas_id: int
+    nama_kelas: str
+    instansi_id: int
+
+    class Config:
+        orm_mode = True
+
+class DosenKelasUpdate(BaseModel):
+    dosen_id: int
+    kelas_ids: List[int]

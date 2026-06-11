@@ -23,6 +23,7 @@ def get_my_profile(user_id: int, db: Session = Depends(get_db)):
         username=user.username,
         nama_lengkap=user.nama_lengkap,
         role=user.role,
+        kelas_id=user.kelas_id,
         nama_kelas=user.nama_kelas,
         instansi_id=user.instansi_id,
         nama_instansi=nama_instansi
@@ -31,15 +32,15 @@ def get_my_profile(user_id: int, db: Session = Depends(get_db)):
 
 @router.put("/me/{user_id}", response_model=schemas.UserLoginResponse)
 def update_my_profile(user_id: int, payload: schemas.UserUpdate, db: Session = Depends(get_db)):
-    """Memperbarui nama lengkap dan/atau nama kelas."""
+    """Memperbarui nama lengkap dan/atau kelas ID."""
     user = db.query(models.User).filter(models.User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User tidak ditemukan.")
 
     if payload.nama_lengkap is not None:
         user.nama_lengkap = payload.nama_lengkap
-    if payload.nama_kelas is not None:
-        user.nama_kelas = payload.nama_kelas
+    if payload.kelas_id is not None:
+        user.kelas_id = payload.kelas_id
 
     db.commit()
     db.refresh(user)
@@ -50,6 +51,7 @@ def update_my_profile(user_id: int, payload: schemas.UserUpdate, db: Session = D
         username=user.username,
         nama_lengkap=user.nama_lengkap,
         role=user.role,
+        kelas_id=user.kelas_id,
         nama_kelas=user.nama_kelas,
         instansi_id=user.instansi_id,
         nama_instansi=nama_instansi
@@ -133,10 +135,21 @@ def get_all_siswa(requestor_id: int, db: Session = Depends(get_db)):
     if not requestor or requestor.role not in [models.RoleEnum.dosen, models.RoleEnum.super_admin]:
         raise HTTPException(status_code=403, detail="Akses ditolak.")
 
-    siswa_list = db.query(models.User).filter(
+    siswa_filter = (
         models.User.instansi_id == requestor.instansi_id,
         models.User.role == models.RoleEnum.siswa
-    ).all()
+    )
+    if requestor.role == models.RoleEnum.dosen:
+        kelas_diampu_ids = [k.kelas_id for k in requestor.kelas_diampu]
+        if not kelas_diampu_ids:
+            return []
+        siswa_filter = (
+            models.User.instansi_id == requestor.instansi_id,
+            models.User.role == models.RoleEnum.siswa,
+            models.User.kelas_id.in_(kelas_diampu_ids)
+        )
+
+    siswa_list = db.query(models.User).filter(*siswa_filter).all()
     return siswa_list
 
 
@@ -161,10 +174,21 @@ def get_siswa_progress(requestor_id: int, db: Session = Depends(get_db)):
     if not requestor or requestor.role not in [models.RoleEnum.dosen, models.RoleEnum.super_admin]:
         raise HTTPException(status_code=403, detail="Akses ditolak.")
 
-    siswa_list = db.query(models.User).filter(
+    siswa_filter = (
         models.User.instansi_id == requestor.instansi_id,
         models.User.role == models.RoleEnum.siswa
-    ).all()
+    )
+    if requestor.role == models.RoleEnum.dosen:
+        kelas_diampu_ids = [k.kelas_id for k in requestor.kelas_diampu]
+        if not kelas_diampu_ids:
+            return []
+        siswa_filter = (
+            models.User.instansi_id == requestor.instansi_id,
+            models.User.role == models.RoleEnum.siswa,
+            models.User.kelas_id.in_(kelas_diampu_ids)
+        )
+
+    siswa_list = db.query(models.User).filter(*siswa_filter).all()
 
     result = []
     for siswa in siswa_list:
@@ -216,11 +240,29 @@ def get_dashboard_stats(requestor_id: int, db: Session = Depends(get_db)):
     if not requestor or requestor.role not in [models.RoleEnum.dosen, models.RoleEnum.super_admin]:
         raise HTTPException(status_code=403, detail="Akses ditolak.")
 
-    # Hitung total siswa di instansi
-    total_siswa = db.query(models.User).filter(
+    siswa_filter = (
         models.User.instansi_id == requestor.instansi_id,
         models.User.role == models.RoleEnum.siswa
-    ).count()
+    )
+    if requestor.role == models.RoleEnum.dosen:
+        kelas_diampu_ids = [k.kelas_id for k in requestor.kelas_diampu]
+        if not kelas_diampu_ids:
+            return {
+                "total_siswa": 0,
+                "total_soal": 0,
+                "avg_bkt_kelas": 0.0,
+                "topik_tersulit": None,
+                "topik_chart_data": [],
+                "is_scoped_empty": True
+            }
+        siswa_filter = (
+            models.User.instansi_id == requestor.instansi_id,
+            models.User.role == models.RoleEnum.siswa,
+            models.User.kelas_id.in_(kelas_diampu_ids)
+        )
+
+    # Hitung total siswa
+    total_siswa = db.query(models.User).filter(*siswa_filter).count()
 
     # Hitung total soal yang dibuat dosen di instansi ini
     dosen_ids = [u.user_id for u in db.query(models.User).filter(
@@ -232,10 +274,7 @@ def get_dashboard_stats(requestor_id: int, db: Session = Depends(get_db)):
     ).count() if dosen_ids else 0
 
     # Hitung rata-rata BKT seluruh siswa di instansi
-    siswa_ids = [u.user_id for u in db.query(models.User).filter(
-        models.User.instansi_id == requestor.instansi_id,
-        models.User.role == models.RoleEnum.siswa
-    ).all()]
+    siswa_ids = [u.user_id for u in db.query(models.User).filter(*siswa_filter).all()]
     all_bkt = db.query(models.BKTHistory).filter(
         models.BKTHistory.siswa_id.in_(siswa_ids)
     ).all() if siswa_ids else []
@@ -282,5 +321,6 @@ def get_dashboard_stats(requestor_id: int, db: Session = Depends(get_db)):
         "total_soal": total_soal,
         "avg_bkt_kelas": round(avg_bkt_kelas, 4),
         "topik_tersulit": topik_tersulit,
-        "topik_chart_data": topik_chart_data
+        "topik_chart_data": topik_chart_data,
+        "is_scoped_empty": False
     }

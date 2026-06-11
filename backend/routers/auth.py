@@ -26,12 +26,15 @@ def login(payload: schemas.UserLogin, db: Session = Depends(get_db)):
     if user.instansi:
         nama_instansi = user.instansi.nama_instansi
 
+    nama_kelas = user.kelas.nama_kelas if user.kelas else None
+
     return schemas.UserLoginResponse(
         user_id=user.user_id,
         username=user.username,
         nama_lengkap=user.nama_lengkap,
         role=user.role,
-        nama_kelas=user.nama_kelas,
+        kelas_id=user.kelas_id,
+        nama_kelas=nama_kelas,
         instansi_id=user.instansi_id,
         nama_instansi=nama_instansi
     )
@@ -65,19 +68,24 @@ def register_siswa(payload: schemas.UserRegister, db: Session = Depends(get_db))
         password_hash=payload.password,   # plaintext untuk prototype
         role=models.RoleEnum.siswa,
         nama_lengkap=payload.nama_lengkap,
-        nama_kelas=payload.nama_kelas,
+        kelas_id=payload.kelas_id,
         instansi_id=instansi.instansi_id
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
+    # Ambil nama kelas untuk response
+    kelas = db.query(models.Kelas).filter(models.Kelas.kelas_id == new_user.kelas_id).first()
+    nama_kelas = kelas.nama_kelas if kelas else None
+
     return schemas.UserLoginResponse(
         user_id=new_user.user_id,
         username=new_user.username,
         nama_lengkap=new_user.nama_lengkap,
         role=new_user.role,
-        nama_kelas=new_user.nama_kelas,
+        kelas_id=new_user.kelas_id,
+        nama_kelas=nama_kelas,
         instansi_id=instansi.instansi_id,
         nama_instansi=instansi.nama_instansi
     )

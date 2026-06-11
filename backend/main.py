@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
-from routers import evaluasi, soal, auth, instansi, users
+from routers import evaluasi, soal, auth, instansi, users, kelas
 
 # Membuat tabel di database (jika belum ada)
 models.Base.metadata.create_all(bind=engine)
@@ -27,3 +27,4 @@ app.include_router(instansi.router)
 app.include_router(users.router)
 app.include_router(evaluasi.router)
 app.include_router(soal.router)
+app.include_router(kelas.router)

@@ -40,20 +40,37 @@ def seed_data():
     db.add(super_admin)
     db.commit()
 
-    # ── 3. Buat Dosen & Siswa untuk Instansi A (SMAN 1 Bandung) ───────
+    # ── 3. Buat Kelas untuk Instansi ──────────────────────────────────
+    kelas_a1 = models.Kelas(
+        nama_kelas="XII RPL 1",
+        instansi_id=instansi_a.instansi_id
+    )
+    kelas_a2 = models.Kelas(
+        nama_kelas="XII RPL 2",
+        instansi_id=instansi_a.instansi_id
+    )
+    kelas_b1 = models.Kelas(
+        nama_kelas="XI TKJ 2",
+        instansi_id=instansi_b.instansi_id
+    )
+    db.add_all([kelas_a1, kelas_a2, kelas_b1])
+    db.commit()
+
+    # ── 4. Buat Dosen & Siswa untuk Instansi A (SMAN 1 Bandung) ───────
     dosen_a = models.User(
         username="dosen_budi",
         password_hash="123",
         role=models.RoleEnum.dosen,
         nama_lengkap="Budi Instruktur",
-        instansi_id=instansi_a.instansi_id
+        instansi_id=instansi_a.instansi_id,
+        kelas_diampu=[kelas_a1, kelas_a2]  # Dosen Budi mengampu kelas XII RPL 1 dan XII RPL 2
     )
     siswa_a1 = models.User(
         username="siswa_hanif",
         password_hash="123",
         role=models.RoleEnum.siswa,
         nama_lengkap="Ahmad Hanif",
-        nama_kelas="XII RPL 1",
+        kelas_id=kelas_a1.kelas_id,
         instansi_id=instansi_a.instansi_id
     )
     siswa_a2 = models.User(
@@ -61,26 +78,27 @@ def seed_data():
         password_hash="123",
         role=models.RoleEnum.siswa,
         nama_lengkap="Rina Kusuma",
-        nama_kelas="XII RPL 1",
+        kelas_id=kelas_a1.kelas_id,
         instansi_id=instansi_a.instansi_id
     )
     db.add_all([dosen_a, siswa_a1, siswa_a2])
     db.commit()
 
-    # ── 4. Buat Dosen & Siswa untuk Instansi B (SMKN 2 Jakarta) ───────
+    # ── 5. Buat Dosen & Siswa untuk Instansi B (SMKN 2 Jakarta) ───────
     dosen_b = models.User(
         username="dosen_citra",
         password_hash="123",
         role=models.RoleEnum.dosen,
         nama_lengkap="Citra Dewi",
-        instansi_id=instansi_b.instansi_id
+        instansi_id=instansi_b.instansi_id,
+        kelas_diampu=[kelas_b1]
     )
     siswa_b1 = models.User(
         username="siswa_bagus",
         password_hash="123",
         role=models.RoleEnum.siswa,
         nama_lengkap="Bagus Pratama",
-        nama_kelas="XI TKJ 2",
+        kelas_id=kelas_b1.kelas_id,
         instansi_id=instansi_b.instansi_id
     )
     db.add_all([dosen_b, siswa_b1])

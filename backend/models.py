@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, Enum, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, Enum, ForeignKey, DateTime, Table
 from sqlalchemy.orm import relationship
 from database import Base
 import datetime
@@ -28,6 +28,28 @@ class Instansi(Base):
 
     # Relasi
     users = relationship("User", back_populates="instansi")
+    kelas = relationship("Kelas", back_populates="instansi")
+
+
+dosen_kelas_association = Table(
+    "tb_dosen_kelas",
+    Base.metadata,
+    Column("dosen_id", Integer, ForeignKey("tb_user.user_id", ondelete="CASCADE"), primary_key=True),
+    Column("kelas_id", Integer, ForeignKey("tb_kelas.kelas_id", ondelete="CASCADE"), primary_key=True)
+)
+
+
+class Kelas(Base):
+    __tablename__ = "tb_kelas"
+
+    kelas_id = Column(Integer, primary_key=True, index=True)
+    nama_kelas = Column(String(50), nullable=False)
+    instansi_id = Column(Integer, ForeignKey("tb_instansi.instansi_id", ondelete="CASCADE"))
+
+    # Relasi
+    instansi = relationship("Instansi", back_populates="kelas")
+    siswa = relationship("User", back_populates="kelas")
+    dosen_pengampu = relationship("User", secondary=dosen_kelas_association, back_populates="kelas_diampu")
 
 
 class User(Base):
@@ -38,14 +60,20 @@ class User(Base):
     password_hash = Column(String(255))
     role = Column(Enum(RoleEnum))
     nama_lengkap = Column(String(100))
-    nama_kelas = Column(String(50), nullable=True)  # Nama kelas/rombel siswa
+    kelas_id = Column(Integer, ForeignKey("tb_kelas.kelas_id", ondelete="SET NULL"), nullable=True)
     instansi_id = Column(Integer, ForeignKey("tb_instansi.instansi_id"), nullable=True)  # NULL untuk super_admin
 
     # Relasi
     instansi = relationship("Instansi", back_populates="users")
+    kelas = relationship("Kelas", back_populates="siswa")
+    kelas_diampu = relationship("Kelas", secondary=dosen_kelas_association, back_populates="dosen_pengampu")
     soal_dibuat = relationship("Soal", back_populates="pembuat")
     evaluasi = relationship("Evaluasi", back_populates="siswa")
     bkt_history = relationship("BKTHistory", back_populates="siswa")
+
+    @property
+    def nama_kelas(self):
+        return self.kelas.nama_kelas if self.kelas else None
 
 
 class TopikMateri(Base):
