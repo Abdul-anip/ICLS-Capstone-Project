@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+from services.auth_service import get_current_user, require_role
 
 router = APIRouter(
     prefix="/api/instansi",
@@ -12,20 +13,17 @@ router = APIRouter(
 
 @router.get("/", response_model=list[schemas.InstansiResponse])
 def get_all_instansi(db: Session = Depends(get_db)):
-    """Endpoint publik: daftar semua instansi (untuk keperluan lain jika dibutuhkan)."""
+    """Endpoint publik: daftar semua instansi (dibutuhkan saat registrasi siswa)."""
     return db.query(models.Instansi).all()
 
 
 @router.post("/", response_model=schemas.InstansiResponse)
-def create_instansi(payload: schemas.InstansiCreate, super_admin_id: int, db: Session = Depends(get_db)):
+def create_instansi(
+    payload: schemas.InstansiCreate,
+    current_user: models.User = Depends(require_role("super_admin")),
+    db: Session = Depends(get_db)
+):
     """Hanya super_admin yang boleh membuat instansi baru."""
-    admin = db.query(models.User).filter(
-        models.User.user_id == super_admin_id,
-        models.User.role == models.RoleEnum.super_admin
-    ).first()
-    if not admin:
-        raise HTTPException(status_code=403, detail="Hanya Super Admin yang dapat membuat instansi.")
-
     # Cek apakah kode instansi sudah dipakai
     existing = db.query(models.Instansi).filter(models.Instansi.kode_instansi == payload.kode_instansi).first()
     if existing:

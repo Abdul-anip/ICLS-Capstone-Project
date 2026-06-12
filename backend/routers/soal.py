@@ -4,6 +4,7 @@ from database import get_db
 import models
 import schemas
 from services.bkt_service import predict_mastery_attempts, get_recommendation_score
+from services.auth_service import get_current_user, require_role
 
 router = APIRouter(
     prefix="/api/soal",
@@ -11,7 +12,11 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=schemas.SoalResponse)
-def create_soal_with_testcase(payload: schemas.SoalWithTestCaseCreate, db: Session = Depends(get_db)):
+def create_soal_with_testcase(
+    payload: schemas.SoalWithTestCaseCreate,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     # Verifikasi Topik dan Dosen
     topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == payload.topik_id).first()
     if not topik:
@@ -61,7 +66,11 @@ def get_all_topik(db: Session = Depends(get_db)):
     ]
 
 @router.post("/topik", response_model=schemas.TopikMateriResponse)
-def create_topik(payload: schemas.TopikMateriCreate, db: Session = Depends(get_db)):
+def create_topik(
+    payload: schemas.TopikMateriCreate,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     """Menambahkan Topik Materi baru ke database."""
     # Cek duplikat nama topik
     existing = db.query(models.TopikMateri).filter(models.TopikMateri.nama_topik == payload.nama_topik).first()
@@ -78,7 +87,11 @@ def create_topik(payload: schemas.TopikMateriCreate, db: Session = Depends(get_d
     return db_topik
 
 @router.delete("/topik/{topik_id}")
-def delete_topik(topik_id: int, db: Session = Depends(get_db)):
+def delete_topik(
+    topik_id: int,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     """Menghapus Topik Materi. Gagal jika masih ada soal yang menggunakan topik ini."""
     topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == topik_id).first()
     if not topik:
@@ -101,7 +114,10 @@ def delete_topik(topik_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/")
-def get_all_soal(db: Session = Depends(get_db)):
+def get_all_soal(
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     soal_list = db.query(models.Soal).all()
     result = []
     for s in soal_list:
@@ -117,7 +133,12 @@ def get_all_soal(db: Session = Depends(get_db)):
     return result
 
 @router.put("/{soal_id}", response_model=schemas.SoalResponse)
-def update_soal(soal_id: int, payload: schemas.SoalWithTestCaseUpdate, db: Session = Depends(get_db)):
+def update_soal(
+    soal_id: int,
+    payload: schemas.SoalWithTestCaseUpdate,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     soal = db.query(models.Soal).filter(models.Soal.soal_id == soal_id).first()
     if not soal:
         raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
@@ -146,7 +167,11 @@ def update_soal(soal_id: int, payload: schemas.SoalWithTestCaseUpdate, db: Sessi
     return soal
 
 @router.delete("/{soal_id}")
-def delete_soal(soal_id: int, db: Session = Depends(get_db)):
+def delete_soal(
+    soal_id: int,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
     soal = db.query(models.Soal).filter(models.Soal.soal_id == soal_id).first()
     if not soal:
         raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
@@ -164,8 +189,15 @@ def delete_soal(soal_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/siswa/{user_id}")
-def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
+def get_soal_siswa(
+    user_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Mengambil daftar soal untuk siswa beserta nama topik dan state BKT saat ini."""
+    # Siswa hanya boleh akses data soal untuk dirinya sendiri
+    if current_user.role.value == 'siswa' and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
     siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
@@ -226,8 +258,15 @@ def get_soal_siswa(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/siswa/{user_id}/soal/{soal_id}")
-def get_soal_siswa_single(user_id: int, soal_id: int, db: Session = Depends(get_db)):
+def get_soal_siswa_single(
+    user_id: int,
+    soal_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Mengambil detail satu soal untuk siswa beserta state BKT topik terkait dan riwayat submit soal tersebut."""
+    if current_user.role.value == 'siswa' and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
     siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
@@ -288,8 +327,14 @@ def get_soal_siswa_single(user_id: int, soal_id: int, db: Session = Depends(get_
     }
 
 @router.get("/siswa/{user_id}/bkt-stats", response_model=list[schemas.BKTStatsResponse])
-def get_bkt_stats(user_id: int, db: Session = Depends(get_db)):
+def get_bkt_stats(
+    user_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Mengambil state BKT terakhir untuk setiap topik yang pernah dikerjakan oleh siswa."""
+    if current_user.role.value == 'siswa' and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
     siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
@@ -321,11 +366,17 @@ def get_bkt_stats(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/siswa/{user_id}/rekomendasi")
-def get_rekomendasi_topik(user_id: int, db: Session = Depends(get_db)):
+def get_rekomendasi_topik(
+    user_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
     Mengambil rekomendasi TOP-3 topik yang paling mendesak untuk dikerjakan siswa
     berdasarkan nilai BKT saat ini, beserta prediksi submit benar untuk menguasai topik.
     """
+    if current_user.role.value == 'siswa' and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
     siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")

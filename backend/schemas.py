@@ -68,6 +68,20 @@ class UserLoginResponse(BaseModel):
         orm_mode = True
 
 
+class TokenResponse(BaseModel):
+    """Response login yang menyertakan JWT access token beserta data user."""
+    access_token: str
+    token_type: str = "bearer"
+    user_id: int
+    username: str
+    nama_lengkap: str
+    role: str
+    kelas_id: Optional[int] = None
+    nama_kelas: Optional[str] = None
+    instansi_id: Optional[int] = None
+    nama_instansi: Optional[str] = None
+
+
 # ─────────────────────────────────────────
 # Skema Manajemen User
 # ─────────────────────────────────────────
@@ -156,7 +170,6 @@ class CodeSubmit(BaseModel):
     soal_id: int
     source_code: str
     language_id: int  # ID bahasa untuk Judge0 (contoh: 71 untuk Python)
-    is_test: Optional[bool] = False
 
 class CodeEvaluationResponse(BaseModel):
     status_compile: str
@@ -164,6 +177,8 @@ class CodeEvaluationResponse(BaseModel):
     output: str
     new_knowledge_state: float
     is_duplicate: bool = False
+    passed_testcases: Optional[int] = None
+    total_testcases: Optional[int] = None
 
 class BKTStatsResponse(BaseModel):
     topik_id: int
