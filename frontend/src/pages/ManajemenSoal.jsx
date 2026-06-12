@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
-import axios from 'axios';
-
-const API = 'http://localhost:8000';
+import apiClient from '../api/apiClient';
 
 function CustomSelect({ label, value, onChange, options, placeholder = 'Pilih opsi...', style = {} }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -176,7 +174,7 @@ function ManajemenSoal() {
 
   const fetchTopikList = async () => {
     try {
-      const res = await axios.get(`${API}/api/soal/topik`);
+      const res = await apiClient.get(`/api/soal/topik`);
       setTopikList(res.data);
       if (res.data.length > 0) {
         setTopikId(res.data[0].topik_id);
@@ -188,7 +186,7 @@ function ManajemenSoal() {
 
   const fetchDaftarSoal = async () => {
     try {
-      const res = await axios.get(`${API}/api/soal/`);
+      const res = await apiClient.get(`/api/soal/`);
       setSoalList(res.data);
     } catch (err) {
       console.error('Gagal mengambil daftar soal:', err);
@@ -238,9 +236,9 @@ function ManajemenSoal() {
 
     try {
       if (isEditing) {
-        await axios.put(`${API}/api/soal/${editId}`, payload);
+        await apiClient.put(`/api/soal/${editId}`, payload);
       } else {
-        await axios.post(`${API}/api/soal/`, payload);
+        await apiClient.post(`/api/soal/`, payload);
       }
       
       fetchDaftarSoal();
@@ -274,7 +272,7 @@ function ManajemenSoal() {
     if (!window.confirm('Yakin ingin menghapus soal ini? Tindakan ini tidak dapat dibatalkan.')) return;
     
     try {
-      await axios.delete(`${API}/api/soal/${soal_id}`);
+      await apiClient.delete(`/api/soal/${soal_id}`);
       fetchDaftarSoal();
     } catch (err) {
       alert('Gagal menghapus soal.');
@@ -306,7 +304,7 @@ function ManajemenSoal() {
     }
 
     try {
-      await axios.post(`${API}/api/soal/topik`, {
+      await apiClient.post(`/api/soal/topik`, {
         nama_topik: namaTopikBaru.trim(),
         deskripsi: deskripsiTopikBaru.trim() || null
       });
@@ -326,7 +324,7 @@ function ManajemenSoal() {
     if (!window.confirm(`Yakin ingin menghapus topik "${nama_topik}"?\n\nTopik hanya bisa dihapus jika tidak ada soal yang menggunakannya.`)) return;
     
     try {
-      await axios.delete(`${API}/api/soal/topik/${topik_id}`);
+      await apiClient.delete(`/api/soal/topik/${topik_id}`);
       setTopikMessage(`Topik "${nama_topik}" berhasil dihapus.`);
       setTopikMessageType('success');
       fetchTopikList();

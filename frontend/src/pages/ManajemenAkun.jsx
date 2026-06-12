@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-
-const API = 'http://127.0.0.1:8000';
+import apiClient from '../api/apiClient';
 
 // ── Modal Tambah Dosen ────────────────────────────────────────────────────────
 function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
@@ -19,16 +18,14 @@ function ModalTambahDosen({ onClose, onSuccess, requestorId }) {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/api/users/dosen?requestor_id=${requestorId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nama_lengkap: form.nama_lengkap, username: form.username, password: form.password }),
+      const res = await apiClient.post(`/api/users/dosen?requestor_id=${requestorId}`, {
+        nama_lengkap: form.nama_lengkap,
+        username: form.username,
+        password: form.password
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.detail || 'Gagal menambahkan dosen.'); setIsLoading(false); return; }
-      onSuccess(data);
-    } catch {
-      setError('Tidak dapat terhubung ke server.');
+      onSuccess(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Gagal menambahkan dosen.');
       setIsLoading(false);
     }
   };
@@ -110,8 +107,8 @@ function ManajemenAkun() {
   const fetchSiswa = async () => {
     setIsLoadingSiswa(true);
     try {
-      const res = await fetch(`${API}/api/users/siswa?requestor_id=${user.user_id}`);
-      if (res.ok) setSiswaList(await res.json());
+      const res = await apiClient.get(`/api/users/siswa?requestor_id=${user.user_id}`);
+      setSiswaList(res.data);
     } catch (e) { console.error(e); }
     finally { setIsLoadingSiswa(false); }
   };
@@ -120,8 +117,8 @@ function ManajemenAkun() {
     setIsLoadingDosen(true);
     try {
       // Ambil semua user, lalu filter dosen (endpoint baru di bawah)
-      const res = await fetch(`${API}/api/users/dosen-list?requestor_id=${user.user_id}`);
-      if (res.ok) setDosenList(await res.json());
+      const res = await apiClient.get(`/api/users/dosen-list?requestor_id=${user.user_id}`);
+      setDosenList(res.data);
     } catch (e) { console.error(e); }
     finally { setIsLoadingDosen(false); }
   };

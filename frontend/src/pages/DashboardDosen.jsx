@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import apiClient from '../api/apiClient';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-
-const API = 'http://127.0.0.1:8000';
 
 // ── Helper: status label berdasarkan nilai BKT ────────────────────────────────
 function getBktStatus(prob) {
-  if (prob >= 0.95) return { label: 'Dikuasai', color: 'var(--success-color)', badgeClass: 'success' };
-  if (prob >= 0.7)  return { label: 'Hampir', color: 'var(--accent-color)', badgeClass: 'yellow' };
-  if (prob >= 0.4)  return { label: 'Belajar', color: 'var(--accent-blue)', badgeClass: 'blue' };
+  if (prob >= 0.8) return { label: 'Dikuasai', color: 'var(--success-color)', badgeClass: 'success' };
+  if (prob >= 0.6)  return { label: 'Hampir', color: 'var(--accent-color)', badgeClass: 'yellow' };
+  if (prob >= 0.3)  return { label: 'Belajar', color: 'var(--accent-blue)', badgeClass: 'blue' };
   return { label: 'Fokus', color: 'var(--danger-color)', badgeClass: 'danger' };
 }
 
@@ -41,17 +40,14 @@ function DashboardDosen() {
   const fetchClassesData = async () => {
     try {
       // Ambil kelas yang diampu dosen
-      const resMy = await fetch(`${API}/api/kelas/my-classes?dosen_id=${user.user_id}`);
-      if (resMy.ok) {
-        const dataMy = await resMy.json();
-        setMyClasses(dataMy);
-        setTempSelectedClasses(dataMy.map(k => k.kelas_id));
-      }
+      const resMy = await apiClient.get(`/api/kelas/my-classes?dosen_id=${user.user_id}`);
+      setMyClasses(resMy.data);
+      setTempSelectedClasses(resMy.data.map(k => k.kelas_id));
       
       // Ambil semua kelas di instansi
       if (user.instansi_id) {
-        const resAll = await fetch(`${API}/api/kelas/instansi?instansi_id=${user.instansi_id}`);
-        if (resAll.ok) setAllInstansiKelas(await resAll.json());
+        const resAll = await apiClient.get(`/api/kelas/instansi?instansi_id=${user.instansi_id}`);
+        setAllInstansiKelas(resAll.data);
       }
     } catch (e) {
       console.error('Gagal mengambil data kelas:', e);
@@ -61,25 +57,17 @@ function DashboardDosen() {
   const handleSaveClasses = async () => {
     setIsSavingClasses(true);
     try {
-      const res = await fetch(`${API}/api/kelas/my-classes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dosen_id: user.user_id,
-          kelas_ids: tempSelectedClasses
-        })
+      await apiClient.post(`/api/kelas/my-classes`, {
+        dosen_id: user.user_id,
+        kelas_ids: tempSelectedClasses
       });
-      if (res.ok) {
-        setIsKelasModalOpen(false);
-        await fetchStats();
-        await fetchSiswaProgress();
-        await fetchClassesData();
-      } else {
-        alert('Gagal memperbarui kelas pantauan.');
-      }
+      setIsKelasModalOpen(false);
+      await fetchStats();
+      await fetchSiswaProgress();
+      await fetchClassesData();
     } catch (e) {
       console.error('Gagal memperbarui kelas pantauan:', e);
-      alert('Error saat menghubungi server.');
+      alert('Gagal memperbarui kelas pantauan.');
     } finally {
       setIsSavingClasses(false);
     }
@@ -94,31 +82,19 @@ function DashboardDosen() {
     setIsAddingKelas(true);
     setKelasError('');
     try {
-      const res = await fetch(`${API}/api/kelas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama_kelas: namaKelasBaru.trim(),
-          instansi_id: user.instansi_id
-        })
+      const response = await apiClient.post(`/api/kelas`, {
+        nama_kelas: namaKelasBaru.trim(),
+        instansi_id: user.instansi_id
       });
-      const data = await res.json();
-      if (res.ok) {
-        setNamaKelasBaru('');
-        // Reload daftar kelas di instansi
-        const resAll = await fetch(`${API}/api/kelas/instansi?instansi_id=${user.instansi_id}`);
-        if (resAll.ok) {
-          const classes = await resAll.json();
-          setAllInstansiKelas(classes);
-          // Otomatis centang kelas yang baru dibuat
-          setTempSelectedClasses([...tempSelectedClasses, data.kelas_id]);
-        }
-      } else {
-        setKelasError(data.detail || 'Gagal menambahkan kelas baru.');
-      }
+      setNamaKelasBaru('');
+      // Reload daftar kelas di instansi
+      const resAll = await apiClient.get(`/api/kelas/instansi?instansi_id=${user.instansi_id}`);
+      setAllInstansiKelas(resAll.data);
+      // Otomatis centang kelas yang baru dibuat
+      setTempSelectedClasses([...tempSelectedClasses, response.data.kelas_id]);
     } catch (e) {
       console.error('Gagal menambahkan kelas:', e);
-      setKelasError('Tidak dapat terhubung ke server.');
+      setKelasError(e.response?.data?.detail || 'Tidak dapat terhubung ke server.');
     } finally {
       setIsAddingKelas(false);
     }
@@ -127,8 +103,8 @@ function DashboardDosen() {
   const fetchStats = async () => {
     setIsLoadingStats(true);
     try {
-      const res = await fetch(`${API}/api/users/dashboard-stats?requestor_id=${user.user_id}`);
-      if (res.ok) setStats(await res.json());
+      const res = await apiClient.get(`/api/users/dashboard-stats?requestor_id=${user.user_id}`);
+      setStats(res.data);
     } catch (e) {
       console.error('Gagal mengambil statistik:', e);
     } finally {
@@ -139,8 +115,8 @@ function DashboardDosen() {
   const fetchSiswaProgress = async () => {
     setIsLoadingSiswa(true);
     try {
-      const res = await fetch(`${API}/api/users/siswa-progress?requestor_id=${user.user_id}`);
-      if (res.ok) setSiswaProgress(await res.json());
+      const res = await apiClient.get(`/api/users/siswa-progress?requestor_id=${user.user_id}`);
+      setSiswaProgress(res.data);
     } catch (e) {
       console.error('Gagal mengambil progress siswa:', e);
     } finally {

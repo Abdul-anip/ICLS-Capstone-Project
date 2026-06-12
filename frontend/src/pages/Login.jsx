@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import apiClient from '../api/apiClient';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -14,27 +15,23 @@ function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await apiClient.post('/api/auth/login', { username, password });
+      const data = response.data;
 
-      const data = await response.json();
+      // Simpan JWT token dan data user secara terpisah
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify({
+        user_id: data.user_id,
+        username: data.username,
+        nama_lengkap: data.nama_lengkap,
+        role: data.role,
+        kelas_id: data.kelas_id,
+        nama_kelas: data.nama_kelas,
+        instansi_id: data.instansi_id,
+        nama_instansi: data.nama_instansi,
+      }));
 
-      if (!response.ok) {
-        // Ambil pesan error dari backend
-        setError(data.detail || 'Login gagal. Periksa kembali kredensial Anda.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Simpan data user ke localStorage
-      localStorage.setItem('user', JSON.stringify(data));
-
-      // Arahkan sesuai role dari database
+      // Arahkan sesuai role
       if (data.role === 'super_admin') {
         navigate('/admin/dashboard');
       } else if (data.role === 'dosen') {
@@ -44,7 +41,11 @@ function Login() {
       }
 
     } catch (err) {
-      setError('Tidak dapat terhubung ke server. Pastikan backend sedang berjalan.');
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Tidak dapat terhubung ke server. Pastikan backend sedang berjalan.');
+      }
       setIsLoading(false);
     }
   };

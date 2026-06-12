@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-
-const API = 'http://127.0.0.1:8000';
+import apiClient from '../api/apiClient';
 
 function ProfilAkun() {
   const navigate = useNavigate();
@@ -39,27 +38,17 @@ function ProfilAkun() {
     setIsUpdatingProfil(true);
 
     try {
-      const res = await fetch(`${API}/api/users/me/${user.user_id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama_lengkap: formProfil.nama_lengkap
-        })
+      const res = await apiClient.put(`/api/users/me/${user.user_id}`, {
+        nama_lengkap: formProfil.nama_lengkap
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setStatusProfil({ type: 'error', msg: data.detail || 'Gagal memperbarui profil.' });
-      } else {
-        setStatusProfil({ type: 'success', msg: 'Profil berhasil diperbarui!' });
-        // Update local storage
-        localStorage.setItem('user', JSON.stringify(data));
-        setUser(data);
-        setFormProfil({ nama_lengkap: data.nama_lengkap || '' });
-        setTimeout(() => setStatusProfil({ type: '', msg: '' }), 4000);
-      }
+      setStatusProfil({ type: 'success', msg: 'Profil berhasil diperbarui!' });
+      // Update local storage
+      localStorage.setItem('user', JSON.stringify(res.data));
+      setUser(res.data);
+      setFormProfil({ nama_lengkap: res.data.nama_lengkap || '' });
+      setTimeout(() => setStatusProfil({ type: '', msg: '' }), 4000);
     } catch (e) {
-      setStatusProfil({ type: 'error', msg: 'Tidak dapat terhubung ke server.' });
+      setStatusProfil({ type: 'error', msg: e.response?.data?.detail || 'Gagal memperbarui profil.' });
     } finally {
       setIsUpdatingProfil(false);
     }
@@ -82,25 +71,15 @@ function ProfilAkun() {
     setIsUpdatingSandi(true);
 
     try {
-      const res = await fetch(`${API}/api/users/me/${user.user_id}/password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          password_lama: formSandi.password_lama,
-          password_baru: formSandi.password_baru
-        })
+      await apiClient.put(`/api/users/me/${user.user_id}/password`, {
+        password_lama: formSandi.password_lama,
+        password_baru: formSandi.password_baru
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setStatusSandi({ type: 'error', msg: data.detail || 'Gagal mengubah kata sandi.' });
-      } else {
-        setStatusSandi({ type: 'success', msg: 'Kata sandi berhasil diubah!' });
-        setFormSandi({ password_lama: '', password_baru: '', konfirmasi: '' });
-        setTimeout(() => setStatusSandi({ type: '', msg: '' }), 4000);
-      }
+      setStatusSandi({ type: 'success', msg: 'Kata sandi berhasil diubah!' });
+      setFormSandi({ password_lama: '', password_baru: '', konfirmasi: '' });
+      setTimeout(() => setStatusSandi({ type: '', msg: '' }), 4000);
     } catch (e) {
-      setStatusSandi({ type: 'error', msg: 'Tidak dapat terhubung ke server.' });
+      setStatusSandi({ type: 'error', msg: e.response?.data?.detail || 'Gagal mengubah kata sandi.' });
     } finally {
       setIsUpdatingSandi(false);
     }

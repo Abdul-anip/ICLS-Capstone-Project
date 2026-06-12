@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API = 'http://127.0.0.1:8000';
+import apiClient from '../api/apiClient';
 
 // ── Komponen Modal Tambah Instansi ────────────────────────────────────────────
 function ModalTambahInstansi({ onClose, onSuccess, adminId }) {
@@ -14,16 +13,10 @@ function ModalTambahInstansi({ onClose, onSuccess, adminId }) {
     setError('');
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/api/instansi/?super_admin_id=${adminId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.detail || 'Gagal menambahkan instansi.'); setIsLoading(false); return; }
-      onSuccess(data);
-    } catch {
-      setError('Tidak dapat terhubung ke server.');
+      const res = await apiClient.post(`/api/instansi/?super_admin_id=${adminId}`, form);
+      onSuccess(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Gagal menambahkan instansi.');
       setIsLoading(false);
     }
   };
@@ -89,16 +82,10 @@ function ModalTambahDosenInstansi({ onClose, onSuccess, adminId, instansi }) {
     setIsLoading(true);
     try {
       const payload = { ...form, instansi_id: instansi.instansi_id };
-      const res = await fetch(`${API}/api/users/admin-create-dosen?requestor_id=${adminId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.detail || 'Gagal mendaftarkan dosen.'); setIsLoading(false); return; }
-      onSuccess(data);
-    } catch {
-      setError('Tidak dapat terhubung ke server.');
+      const res = await apiClient.post(`/api/users/admin-create-dosen?requestor_id=${adminId}`, payload);
+      onSuccess(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Gagal mendaftarkan dosen.');
       setIsLoading(false);
     }
   };
@@ -177,9 +164,8 @@ function AdminDashboard() {
   const fetchInstansi = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/api/instansi/`);
-      const data = await res.json();
-      setInstansiList(data);
+      const res = await apiClient.get(`/api/instansi/`);
+      setInstansiList(res.data);
     } catch {
       console.error('Gagal mengambil data instansi');
     } finally {

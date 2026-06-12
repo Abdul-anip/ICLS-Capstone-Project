@@ -9,7 +9,8 @@ function Navbar({ role, activePage }) {
   const user = userRaw ? JSON.parse(userRaw) : null;
 
   const handleLogout = () => {
-    localStorage.removeItem('user');  // Hapus sesi user
+    localStorage.removeItem('access_token'); // Hapus JWT token
+    localStorage.removeItem('user');          // Hapus data user
     navigate('/login');
   };
 
