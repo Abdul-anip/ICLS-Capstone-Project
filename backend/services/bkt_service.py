@@ -1,3 +1,6 @@
+import datetime
+import math
+
 class BKTModel:
     def __init__(self, prior_prob: float = 0.1, guess_rate: float = 0.2, slip_rate: float = 0.1, transition_rate: float = 0.1):
         self.prior_prob = prior_prob
@@ -47,9 +50,9 @@ class BKTModel:
 
         return round(new_knowledge_prob, 4)
 
-    def predict_mastery_attempts(self, current_prob: float, tingkat_kesulitan: str = "Mudah", threshold: float = 0.95, num_soal: int = None) -> int:
+    def predict_mastery_attempts(self, current_prob: float, tingkat_kesulitan: str = "Mudah", threshold: float = 0.8, num_soal: int = None) -> int:
         """
-        Mensimulasikan berapa banyak submit BENAR yang dibutuhkan agar P(L) mencapai threshold (default 0.95).
+        Mensimulasikan berapa banyak submit BENAR yang dibutuhkan agar P(L) mencapai threshold (default 0.8).
         Menggunakan tingkat kesulitan soal terbanyak di topik tersebut (default Mudah jika tidak diketahui).
         Maksimum simulasi: 50 langkah untuk menghindari infinite loop.
         """
@@ -73,8 +76,8 @@ class BKTModel:
         """
         # Normalisasi terbalik: semakin rendah P(L), semakin tinggi skor
         # Topik yang belum pernah dikerjakan (P(L) = 0.1 default) juga mendapat skor tinggi
-        # Topik yang sudah dikuasai (P(L) >= 0.95) mendapat skor sangat rendah
-        if learned_prob >= 0.95:
+        # Topik yang sudah dikuasai (P(L) >= 0.8) mendapat skor sangat rendah
+        if learned_prob >= 0.8:
             return 0.0  # Sudah dikuasai, tidak perlu direkomendasikan
         return round(1.0 - learned_prob, 4)
 
@@ -96,3 +99,32 @@ def predict_mastery_attempts(current_prob: float, tingkat_kesulitan: str = "Muda
 def get_recommendation_score(learned_prob: float) -> float:
     """Wrapper: Hitung skor prioritas rekomendasi topik (0.0 – 1.0)."""
     return bkt_engine.get_recommendation_score(learned_prob)
+
+
+def apply_bkt_decay(bkt_record, db) -> float:
+    """
+    Menerapkan forgetting curve (peluruhan kognitif) malas pada learned_prob 
+    jika siswa tidak aktif selama lebih dari 24 jam.
+    Peluruhan: P(L_decayed) = max(0.1, P(L_initial) * e^(-0.02 * days_inactive))
+    """
+    if not bkt_record or not bkt_record.updated_at:
+        return 0.1
+        
+    now = datetime.datetime.utcnow()
+    delta_time = now - bkt_record.updated_at
+    days_inactive = delta_time.total_seconds() / (24 * 3600)
+    
+    # Terapkan peluruhan jika tidak aktif minimal 1 hari (24 jam)
+    if days_inactive >= 1.0:
+        decay_rate = 0.02 # 2% per hari
+        p_initial = bkt_record.learned_prob
+        # Formula peluruhan eksponensial
+        p_decayed = max(0.1, p_initial * math.exp(-decay_rate * days_inactive))
+        p_decayed = round(p_decayed, 4)
+        
+        if p_decayed != p_initial:
+            bkt_record.learned_prob = p_decayed
+            db.commit()
+            return p_decayed
+            
+    return bkt_record.learned_prob

@@ -4,7 +4,8 @@ from database import get_db
 import models
 import schemas
 from services.judge0_service import evaluate_code
-from services.bkt_service import calculate_new_state
+from services.bkt_service import calculate_new_state, apply_bkt_decay
+from services.auth_service import get_current_user
 import datetime
 
 # Jeda waktu minimum (dalam detik) untuk menganggap percobaan pengerjaan sebagai sesi baru.
@@ -17,7 +18,15 @@ router = APIRouter(
 )
 
 @router.post("/submit", response_model=schemas.CodeEvaluationResponse)
-def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
+def submit_code(
+    submission: schemas.CodeSubmit,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Validasi: siswa hanya boleh submit untuk dirinya sendiri
+    if current_user.user_id != submission.siswa_id:
+        raise HTTPException(status_code=403, detail="Tidak diizinkan submit atas nama pengguna lain.")
+
     # 0. Validasi Kode Kosong atau Template Default
     code_stripped = submission.source_code.strip()
     if not code_stripped:
@@ -39,168 +48,194 @@ def submit_code(submission: schemas.CodeSubmit, db: Session = Depends(get_db)):
     if any(normalize(temp) == normalized_sub for temp in TEMPLATES):
         raise HTTPException(status_code=400, detail="Silakan lengkapi kode solusi Anda terlebih dahulu")
 
-    # 1. Cari soal dan test case
+    # 1. Cari soal
     soal = db.query(models.Soal).filter(models.Soal.soal_id == submission.soal_id).first()
     if not soal:
         raise HTTPException(status_code=404, detail="Soal tidak ditemukan")
     
-    # Ambil testcase pertama (untuk penyederhanaan contoh)
-    testcase = db.query(models.TestCase).filter(models.TestCase.soal_id == submission.soal_id).first()
-    expected_output = testcase.expected_output if testcase else ""
-    input_data = testcase.input_data if testcase else ""
-
-    # ─── DETEKSI KODE DUPLIKAT (Hanya untuk Submit Final) ────────────────────
-    is_duplicate = False
-    if not submission.is_test:
-        # Cek apakah submit terakhir untuk soal ini dari siswa yang sama
-        # memiliki source_code yang IDENTIK. Jika ya, tolak update BKT.
-        last_eval = (
-            db.query(models.Evaluasi)
-            .filter(
-                models.Evaluasi.siswa_id == submission.siswa_id,
-                models.Evaluasi.soal_id == submission.soal_id,
-            )
-            .order_by(models.Evaluasi.timestamp.desc())
-            .first()
-        )
-
-        is_duplicate = (
-            last_eval is not None
-            and last_eval.source_code.strip() == submission.source_code.strip()
-        )
-
-        if is_duplicate:
-            # Kembalikan hasil submit sebelumnya TANPA menjalankan ulang Judge0
-            # dan TANPA mengupdate state BKT — mencegah exploit P(L)
-            bkt_record = db.query(models.BKTHistory).filter(
-                models.BKTHistory.siswa_id == submission.siswa_id,
-                models.BKTHistory.topik_id == soal.topik_id
-            ).first()
-            current_prob = bkt_record.learned_prob if bkt_record else 0.1
-
-            return schemas.CodeEvaluationResponse(
-                status_compile=last_eval.status_compile,
-                is_correct=bool(last_eval.binary_result),
-                output="[Kode identik dengan submit sebelumnya — BKT tidak diperbarui]",
-                new_knowledge_state=current_prob,
-                is_duplicate=True
-            )
-    # ─────────────────────────────────────────────────────────────────────────
-
-    # 2. Panggil Judge0 API (Service)
-    judge_result = evaluate_code(
-        source_code=submission.source_code,
-        language_id=submission.language_id,
-        expected_output=expected_output,
-        input_data=input_data
-    )
+    # Ambil semua testcase untuk soal ini
+    testcases = db.query(models.TestCase).filter(models.TestCase.soal_id == submission.soal_id).all()
     
-    is_correct = judge_result["is_correct"]
-    status_compile = judge_result["status"]
-
     # Ambil riwayat BKT siswa saat ini untuk topik ini
     bkt_record = db.query(models.BKTHistory).filter(
         models.BKTHistory.siswa_id == submission.siswa_id,
         models.BKTHistory.topik_id == soal.topik_id
     ).first()
 
-    current_prob = bkt_record.learned_prob if bkt_record else 0.1
+    # Terapkan peluruhan BKT (forgetting curve) malas jika siswa sudah tidak aktif
+    if bkt_record:
+        current_prob = apply_bkt_decay(bkt_record, db)
+    else:
+        current_prob = 0.1
 
-    if not submission.is_test:
-        # 3. Panggil BKT Engine (Service) - Hanya untuk Submit Final
-        # Ambil riwayat pengerjaan soal ini, diurutkan dari yang terbaru
-        evals_history = db.query(models.Evaluasi).filter(
+    # ─── DETEKSI KODE DUPLIKAT ────────────────────────────────────────────────
+    is_duplicate = False
+    last_eval = (
+        db.query(models.Evaluasi)
+        .filter(
             models.Evaluasi.siswa_id == submission.siswa_id,
-            models.Evaluasi.soal_id == submission.soal_id
-        ).order_by(models.Evaluasi.timestamp.desc()).all()
-
-        # Batasi riwayat pengerjaan hanya pada "Sesi Aktif" saat ini.
-        # Jika ada jeda waktu pengerjaan yang melebihi BKT_SESSION_JEDA_SECONDS,
-        # maka riwayat yang lebih lama dari jeda tersebut akan diabaikan (dianggap sesi lama).
-        active_session_evals = []
-        current_time = datetime.datetime.utcnow()
-        prev_time = current_time
-
-        for ev in evals_history:
-            if (prev_time - ev.timestamp).total_seconds() > BKT_SESSION_JEDA_SECONDS:
-                break
-            active_session_evals.append(ev)
-            prev_time = ev.timestamp
-
-        already_solved = any(e.binary_result == 1 for e in active_session_evals)
-        already_failed = any(e.binary_result == 0 for e in active_session_evals)
-        
-        should_update_bkt = False
-        
-        if is_correct:
-            # Update BKT hanya jika belum pernah diselesaikan dengan benar sebelumnya
-            if not already_solved:
-                should_update_bkt = True
-        else:
-            # Update BKT jika belum pernah mencoba soal ini sama sekali (mencegah spam jawaban salah)
-            if not already_solved and not already_failed:
-                should_update_bkt = True
-
-        if should_update_bkt:
-            # Hitung jumlah soal aktif dalam topik ini untuk BKT dinamis (hanya dari dosen instansi siswa yang sama)
-            siswa = db.query(models.User).filter(models.User.user_id == submission.siswa_id).first()
-            dosen_instansi = db.query(models.User.user_id).filter(
-                models.User.instansi_id == siswa.instansi_id,
-                models.User.role == 'dosen'
-            ).subquery()
-
-            num_soal = db.query(models.Soal).filter(
-                models.Soal.topik_id == soal.topik_id,
-                models.Soal.dosen_id.in_(dosen_instansi)
-            ).count()
-
-            # Kalkulasi Knowledge State baru berdasarkan tingkat kesulitan soal dan jumlah soal
-            new_knowledge_prob = calculate_new_state(
-                current_prob=current_prob, 
-                is_correct=is_correct, 
-                tingkat_kesulitan=soal.tingkat_kesulitan,
-                num_soal=num_soal
-            )
-
-            # Simpan atau update state BKT ke database
-            if bkt_record:
-                bkt_record.learned_prob = new_knowledge_prob
-            else:
-                # Buat record baru jika belum ada
-                new_bkt = models.BKTHistory(
-                    siswa_id=submission.siswa_id,
-                    topik_id=soal.topik_id,
-                    learned_prob=new_knowledge_prob
-                )
-                db.add(new_bkt)
-            current_prob = new_knowledge_prob
-        
-        # 4. Simpan Log Evaluasi ke Database - Hanya untuk Submit Final
-        eval_log = models.Evaluasi(
-            siswa_id=submission.siswa_id,
-            soal_id=submission.soal_id,
-            source_code=submission.source_code,
-            status_compile=status_compile,
-            binary_result=1 if is_correct else 0
+            models.Evaluasi.soal_id == submission.soal_id,
         )
-        db.add(eval_log)
-        
-        # Commit seluruh transaksi database
-        db.commit()
+        .order_by(models.Evaluasi.timestamp.desc())
+        .first()
+    )
 
-    # 5. Kembalikan Response
+    is_duplicate = (
+        last_eval is not None
+        and last_eval.source_code.strip() == submission.source_code.strip()
+    )
+
+    if is_duplicate:
+        # Kembalikan hasil submit sebelumnya TANPA menjalankan ulang Judge0
+        # dan TANPA mengupdate state BKT — mencegah exploit P(L)
+        return schemas.CodeEvaluationResponse(
+            status_compile=last_eval.status_compile,
+            is_correct=bool(last_eval.binary_result),
+            output="[Kode identik dengan submit sebelumnya — BKT tidak diperbarui]",
+            new_knowledge_state=current_prob,
+            is_duplicate=True,
+            passed_testcases=len(testcases) if last_eval.binary_result else 0,
+            total_testcases=len(testcases)
+        )
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # 3. Mode Submit Final (Evaluasi Seluruh Test Case)
+    passed_count = 0
+    total_testcases = len(testcases)
+    status_compile = "Accepted"
+    is_correct = True
+    output_summary = ""
+
+    if total_testcases == 0:
+        # Fallback jika tidak ada testcase di database
+        judge_result = evaluate_code(
+            source_code=submission.source_code,
+            language_id=submission.language_id,
+            expected_output=""
+        )
+        status_compile = judge_result["status"]
+        is_correct = (status_compile == "Accepted")
+        passed_count = 1 if is_correct else 0
+        total_testcases = 1
+        output_summary = judge_result["output"]
+    else:
+        for index, tc in enumerate(testcases):
+            judge_result = evaluate_code(
+                source_code=submission.source_code,
+                language_id=submission.language_id,
+                expected_output=tc.expected_output,
+                input_data=tc.input_data
+            )
+            
+            # Jika compile error atau runtime error, hentikan loop
+            if judge_result["status"] in ["Runtime Error / Syntax Error", "API Error", "Connection Error"]:
+                status_compile = judge_result["status"]
+                is_correct = False
+                output_summary = judge_result["output"]
+                break
+                
+            if judge_result["is_correct"]:
+                passed_count += 1
+            else:
+                is_correct = False
+                # Ambil output kegagalan testcase pertama sebagai contoh feedback
+                if not output_summary:
+                    output_summary = f"Wrong Answer pada Testcase {index + 1}.\nOutput Anda:\n{judge_result['output']}"
+        
+        # Jika lolos kompilasi tapi ada yang salah, statusnya Wrong Answer
+        if status_compile == "Accepted" and not is_correct:
+            status_compile = "Wrong Answer"
+            
+        if is_correct:
+            output_summary = "Seluruh testcase berhasil dilewati dengan sukses!"
+
+    # 4. Logika BKT Dinamis Baru (Berdasarkan Transisi Hasil Submit Terakhir)
+    last_result = last_eval.binary_result if last_eval else None
+    current_result = 1 if is_correct else 0
+    
+    should_update_bkt = False
+    
+    if last_result is None:
+        # Pengerjaan pertama kali (selalu update BKT)
+        should_update_bkt = True
+    elif last_result == 0 and current_result == 1:
+        # Perbaikan: Dari Salah ke Benar (BKT naik)
+        should_update_bkt = True
+    elif last_result == 1 and current_result == 0:
+        # Penurunan: Dari Benar ke Salah (BKT turun)
+        should_update_bkt = True
+    # Jika Benar -> Benar atau Salah -> Salah, should_update_bkt tetap False (mencegah spam)
+
+    if should_update_bkt:
+        # Hitung jumlah soal aktif dalam topik ini untuk BKT dinamis (hanya dari dosen instansi siswa yang sama)
+        siswa = db.query(models.User).filter(models.User.user_id == submission.siswa_id).first()
+        dosen_instansi = db.query(models.User.user_id).filter(
+            models.User.instansi_id == siswa.instansi_id,
+            models.User.role == 'dosen'
+        ).subquery()
+
+        num_soal = db.query(models.Soal).filter(
+            models.Soal.topik_id == soal.topik_id,
+            models.Soal.dosen_id.in_(dosen_instansi)
+        ).count()
+
+        # Kalkulasi Knowledge State baru berdasarkan tingkat kesulitan soal dan jumlah soal
+        new_knowledge_prob = calculate_new_state(
+            current_prob=current_prob, 
+            is_correct=is_correct, 
+            tingkat_kesulitan=soal.tingkat_kesulitan,
+            num_soal=num_soal
+        )
+
+        # Simpan atau update state BKT ke database
+        if bkt_record:
+            bkt_record.learned_prob = new_knowledge_prob
+        else:
+            # Buat record baru jika belum ada
+            new_bkt = models.BKTHistory(
+                siswa_id=submission.siswa_id,
+                topik_id=soal.topik_id,
+                learned_prob=new_knowledge_prob
+            )
+            db.add(new_bkt)
+        current_prob = new_knowledge_prob
+    
+    # 5. Simpan Log Evaluasi ke Database - Hanya untuk Submit Final
+    eval_log = models.Evaluasi(
+        siswa_id=submission.siswa_id,
+        soal_id=submission.soal_id,
+        source_code=submission.source_code,
+        status_compile=status_compile,
+        binary_result=current_result
+    )
+    db.add(eval_log)
+    
+    # Commit seluruh transaksi database
+    db.commit()
+
+    # 6. Kembalikan Response
     return schemas.CodeEvaluationResponse(
         status_compile=status_compile,
         is_correct=is_correct,
-        output=judge_result["output"],
+        output=output_summary,
         new_knowledge_state=current_prob,
-        is_duplicate=False
+        is_duplicate=False,
+        passed_testcases=passed_count,
+        total_testcases=total_testcases
     )
 
 
 @router.get("/history/{user_id}", response_model=list[schemas.EvaluasiHistoryResponse])
-def get_evaluasi_history(user_id: int, db: Session = Depends(get_db)):
+def get_evaluasi_history(
+    user_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Mengambil riwayat evaluasi / submit kode seorang siswa."""
+    # Siswa hanya bisa melihat riwayatnya sendiri; dosen/admin bisa melihat semua
+    if current_user.role.value == 'siswa' and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+
     siswa = db.query(models.User).filter(models.User.user_id == user_id, models.User.role == 'siswa').first()
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")

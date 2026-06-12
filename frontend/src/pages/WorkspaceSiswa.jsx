@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import Editor from '@monaco-editor/react';
 import Navbar from '../components/Navbar';
-
-const API = 'http://localhost:8000';
 
 const LANGUAGES = {
   71: { name: 'Python 3', template: '# Tulis kodemu disini\n', ext: 'main.py', monacoLang: 'python' },
@@ -51,7 +49,7 @@ function WorkspaceSiswa() {
     setIsLockedError(false);
     setLockedMessage('');
     try {
-      const res = await axios.get(`${API}/api/soal/siswa/${user.user_id}/soal/${soalId}`);
+      const res = await apiClient.get(`/api/soal/siswa/${user.user_id}/soal/${soalId}`);
       const data = res.data;
       setActiveSoal(data);
       setBktProb(data.learned_prob);
@@ -85,7 +83,7 @@ function WorkspaceSiswa() {
     }
   };
 
-  const handleSubmit = async (isTest = false) => {
+  const handleSubmit = async () => {
     if (!activeSoal) return;
 
     const template = LANGUAGES[activeLang]?.template || '';
@@ -103,60 +101,48 @@ function WorkspaceSiswa() {
     }
 
     setIsLoading(true);
-    setOutput(isTest ? 'Menguji coba kompilasi kode...' : 'Mengkompilasi dan mencocokkan dengan test case untuk submit final...');
+    setOutput('Mengkompilasi dan mencocokkan dengan seluruh test case...');
 
     try {
-      const response = await axios.post(`${API}/api/evaluasi/submit`, {
+      const response = await apiClient.post(`/api/evaluasi/submit`, {
         siswa_id: user.user_id,
         soal_id: activeSoal.soal_id,
         source_code: code,
-        language_id: activeLang,
-        is_test: isTest
+        language_id: activeLang
       });
 
-      const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate } = response.data;
+      const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate, passed_testcases, total_testcases } = response.data;
 
       let outText = '';
 
-      if (isTest) {
-        outText = `[UJI COBA RUN]\n`;
+      if (is_duplicate) {
+        outText += `PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
+        outText += `─────────────────────────────────────────────\n`;
+        outText += `Tingkat Pemahaman (BKT) tidak diperbarui.\n`;
+        outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
+        outText += `Hasil submit sebelumnya:\n`;
+        outText += `Status: ${status_compile}\n`;
+        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus`;
+      } else {
+        outText = `[SUBMIT FINAL]\n`;
         outText += `─────────────────────────────────────────────\n`;
         outText += `Status: ${status_compile}\n`;
-        outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}\n\n`;
-        outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}\n\n`;
-        outText += `(BKT tidak diperbarui pada mode Uji Coba)`;
-      } else {
-        if (is_duplicate) {
-          outText += `PERINGATAN: Kode identik dengan submit sebelumnya!\n`;
-          outText += `─────────────────────────────────────────────\n`;
-          outText += `Tingkat Pemahaman (BKT) tidak diperbarui.\n`;
-          outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
-          outText += `Hasil submit sebelumnya:\n`;
-          outText += `Status: ${status_compile}\n`;
-          outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}`;
-        } else {
-          outText = `[SUBMIT FINAL]\n`;
-          outText += `─────────────────────────────────────────────\n`;
-          outText += `Status: ${status_compile}\n`;
-          outText += `Benar?: ${is_correct ? 'Ya' : 'Tidak'}\n\n`;
-          outText += `Output Program:\n${apiOutput || '(Tidak ada output)'}`;
+        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus\n\n`;
+        outText += `Detail Feedback:\n${apiOutput || '(Tidak ada feedback)'}`;
 
-          // Tambahkan ke riwayat lokal jika bukan duplikat dan ini submit final
-          const newAttempt = {
-            evaluasi_id: Date.now(),
-            status_compile: status_compile,
-            binary_result: is_correct ? 1 : 0,
-            timestamp: new Date().toISOString(),
-            source_code: code
-          };
-          setAttempts(prev => [newAttempt, ...prev]);
-        }
+        // Tambahkan ke riwayat lokal jika bukan duplikat
+        const newAttempt = {
+          evaluasi_id: Date.now(),
+          status_compile: status_compile,
+          binary_result: is_correct ? 1 : 0,
+          timestamp: new Date().toISOString(),
+          source_code: code
+        };
+        setAttempts(prev => [newAttempt, ...prev]);
       }
 
       setOutput(outText);
-      if (!isTest) {
-        setBktProb(new_knowledge_state);
-      }
+      setBktProb(new_knowledge_state);
 
     } catch (error) {
       if (error.response?.data?.detail) {
@@ -251,18 +237,18 @@ function WorkspaceSiswa() {
                   Penguasaan Topik Ini (BKT)
                 </h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <div style={{ fontSize: '1.6rem', fontWeight: '800', color: bktProb > 0.95 ? 'var(--success-color)' : 'var(--accent-color)' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: '800', color: bktProb >= 0.8 ? 'var(--success-color)' : 'var(--accent-color)' }}>
                     {(bktProb * 100).toFixed(1)}%
                   </div>
                   <div style={{ flex: 1, height: '12px', background: '#000000', border: '1.5px solid #000000', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{
                       width: `${bktProb * 100}%`, height: '100%', transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
-                      background: bktProb > 0.95 ? 'var(--success-color)' : 'var(--accent-blue)',
+                      background: bktProb >= 0.8 ? 'var(--success-color)' : 'var(--accent-blue)',
                       borderRight: bktProb > 0 ? '1.5px solid #000000' : 'none'
                     }}></div>
                   </div>
                 </div>
-                {bktProb > 0.95 && (
+                {bktProb >= 0.8 && (
                   <div style={{
                     color: '#000000', background: 'var(--success-color)', border: '1.5px solid #000000',
                     boxShadow: '1.5px 1.5px 0px #000000', borderRadius: '4px', fontSize: '0.8rem',
@@ -364,21 +350,12 @@ function WorkspaceSiswa() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                    Ctrl+Enter (Run) | Ctrl+Shift+Enter (Submit)
+                    Ctrl+Enter (Submit)
                   </span>
-                  <button
-                    id="btn-run-code"
-                    className="btn btn-secondary"
-                    onClick={() => handleSubmit(true)}
-                    disabled={isLoading}
-                    style={{ padding: '8px 16px', fontSize: '0.85rem', color: '#FFFFFF', boxShadow: '2px 2px 0px #000000' }}
-                  >
-                    {isLoading ? 'Running...' : 'Uji Coba Run'}
-                  </button>
                   <button
                     id="btn-submit-code"
                     className="btn btn-primary"
-                    onClick={() => handleSubmit(false)}
+                    onClick={() => handleSubmit()}
                     disabled={isLoading}
                     style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                   >
@@ -398,24 +375,12 @@ function WorkspaceSiswa() {
                   onMount={(editor, monaco) => {
                     editorRef.current = editor;
 
-                    // Shortcut Ctrl+Enter untuk Uji Coba Run
-                    editor.addAction({
-                      id: 'run-code',
-                      label: 'Uji Coba Run',
-                      keybindings: [
-                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter
-                      ],
-                      run: () => {
-                        document.getElementById('btn-run-code')?.click();
-                      }
-                    });
-
-                    // Shortcut Ctrl+Shift+Enter untuk Submit Final
+                    // Shortcut Ctrl+Enter untuk Submit Final
                     editor.addAction({
                       id: 'submit-code',
                       label: 'Submit Final',
                       keybindings: [
-                        monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter
                       ],
                       run: () => {
                         document.getElementById('btn-submit-code')?.click();
@@ -462,7 +427,7 @@ function WorkspaceSiswa() {
                 padding: '16px 20px', flex: 1, overflowY: 'auto',
                 fontFamily: "'Fira Code', monospace", fontSize: '0.85rem',
                 color: output.includes('PERINGATAN') ? 'var(--accent-color)'
-                  : output.includes('Error') || output.includes('Tidak') ? 'var(--danger-color)'
+                  : output.includes('Error') || output.includes('Wrong Answer') || output.includes('Gagal') ? 'var(--danger-color)'
                     : 'var(--success-color)',
                 whiteSpace: 'pre-wrap', background: '#08080A'
               }}>

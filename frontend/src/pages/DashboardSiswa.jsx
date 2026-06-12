@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 import Navbar from '../components/Navbar';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-const API = 'http://localhost:8000';
-
 function getBktStatus(prob) {
-  if (prob >= 0.95) return { label: 'Dikuasai', color: 'var(--success-color)', badgeClass: 'brutal-badge-success' };
-  if (prob >= 0.7) return { label: 'Hampir', color: 'var(--accent-color)', badgeClass: 'brutal-badge-yellow' };
-  if (prob >= 0.4) return { label: 'Belajar', color: 'var(--accent-blue)', badgeClass: 'brutal-badge-blue' };
+  if (prob >= 0.8) return { label: 'Dikuasai', color: 'var(--success-color)', badgeClass: 'brutal-badge-success' };
+  if (prob >= 0.6) return { label: 'Hampir', color: 'var(--accent-color)', badgeClass: 'brutal-badge-yellow' };
+  if (prob >= 0.3) return { label: 'Belajar', color: 'var(--accent-blue)', badgeClass: 'brutal-badge-blue' };
   return { label: 'Fokus', color: 'var(--danger-color)', badgeClass: 'brutal-badge-danger' };
 }
 
@@ -39,10 +37,10 @@ function DashboardSiswa() {
     setIsLoading(true);
     try {
       const [resSoal, resBkt, resHist, resRekom] = await Promise.all([
-        axios.get(`${API}/api/soal/siswa/${user.user_id}`),
-        axios.get(`${API}/api/soal/siswa/${user.user_id}/bkt-stats`),
-        axios.get(`${API}/api/evaluasi/history/${user.user_id}`),
-        axios.get(`${API}/api/soal/siswa/${user.user_id}/rekomendasi`)
+        apiClient.get(`/api/soal/siswa/${user.user_id}`),
+        apiClient.get(`/api/soal/siswa/${user.user_id}/bkt-stats`),
+        apiClient.get(`/api/evaluasi/history/${user.user_id}`),
+        apiClient.get(`/api/soal/siswa/${user.user_id}/rekomendasi`)
       ]);
 
       setSoalList(resSoal.data);
@@ -151,7 +149,7 @@ function DashboardSiswa() {
                       <Bar dataKey="Penguasaan" fill="var(--accent-blue)">
                         {bktStats.map((entry, index) => {
                           const val = entry.Penguasaan;
-                          const color = val >= 95 ? 'var(--success-color)' : val >= 70 ? 'var(--accent-color)' : 'var(--accent-blue)';
+                          const color = val >= 80 ? 'var(--success-color)' : val >= 60 ? 'var(--accent-color)' : 'var(--accent-blue)';
                           return <Cell key={`cell-${index}`} fill={color} stroke="#000000" strokeWidth={1.5} />;
                         })}
                       </Bar>
