@@ -19,3 +19,7 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Environment Variables — JANGAN pernah di-commit!
+.env
+*.env

@@ -1,10 +1,19 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Ganti 'root' dan '' dengan username dan password MySQL Anda jika berbeda.
-# Pastikan Anda telah membuat database dengan nama 'icls_db' di MySQL.
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost/icls_db"
+# Muat variabel dari berkas .env (untuk pengembangan lokal)
+load_dotenv()
+
+# Konfigurasi koneksi database dari environment variables — JANGAN hardcode di sini!
+DB_USER = os.environ.get("DB_USER", "root")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_NAME = os.environ.get("DB_NAME", "icls_db")
+
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
