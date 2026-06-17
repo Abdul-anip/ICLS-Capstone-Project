@@ -406,8 +406,8 @@ def get_rekomendasi_topik(
         ).first()
         learned_prob = bkt_record.learned_prob if bkt_record else 0.1
 
-        # Lewati topik yang sudah dikuasai (P(L) >= 0.95)
-        if learned_prob >= 0.95:
+        # Lewati topik yang sudah dikuasai (P(L) >= 0.8) — selaras dengan threshold penguasaan yang baru
+        if learned_prob >= 0.8:
             continue
 
         # Ambil semua soal dari topik ini untuk analisis
