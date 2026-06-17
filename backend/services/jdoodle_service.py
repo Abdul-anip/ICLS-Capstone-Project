@@ -1,13 +1,18 @@
+import os
 import requests
+from dotenv import load_dotenv
+
+# Muat variabel dari berkas .env (jika ada, untuk pengembangan lokal)
+load_dotenv()
 
 # URL JDoodle API
 JDOODLE_URL = "https://api.jdoodle.com/v1/execute"
 
-# Kredensial JDoodle User
-CLIENT_ID = "43c8de145e87cd04ca5661736d8c36d1"
-CLIENT_SECRET = "511a4da84416849a593bbedfe8cfb401f918e5c294267ce28cc552a8489351f7"
+# Kredensial JDoodle dibaca dari environment variable — JANGAN hardcode di sini!
+CLIENT_ID = os.environ.get("JDOODLE_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("JDOODLE_CLIENT_SECRET", "")
 
-# Pemetaan ID bahasa kita (sebelumnya standar Judge0) ke JDoodle API
+# Pemetaan ID bahasa ke JDoodle API
 LANGUAGE_MAP = {
     71: {"language": "python3", "versionIndex": "4"},
     54: {"language": "cpp", "versionIndex": "5"},

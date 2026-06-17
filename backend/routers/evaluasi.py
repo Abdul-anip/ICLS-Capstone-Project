@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
-from services.judge0_service import evaluate_code
+from services.jdoodle_service import evaluate_code
 from services.bkt_service import calculate_new_state, apply_bkt_decay
 from services.auth_service import get_current_user
 import datetime
