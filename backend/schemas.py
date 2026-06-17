@@ -151,6 +151,7 @@ class SoalWithTestCaseCreate(BaseModel):
     deskripsi_soal: str
     tingkat_kesulitan: str
     testcases: List[TestCaseCreate]
+    kelas_ids: Optional[List[int]] = []
 
 class SoalWithTestCaseUpdate(BaseModel):
     topik_id: int
@@ -158,6 +159,7 @@ class SoalWithTestCaseUpdate(BaseModel):
     deskripsi_soal: str
     tingkat_kesulitan: str
     testcases: List[TestCaseCreate]
+    kelas_ids: Optional[List[int]] = []
 
 
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from database import get_db
 import models
 import schemas
@@ -35,6 +36,13 @@ def create_soal_with_testcase(
         tingkat_kesulitan=payload.tingkat_kesulitan
     )
     db.add(db_soal)
+    
+    if payload.kelas_ids:
+        for kid in payload.kelas_ids:
+            k = db.query(models.Kelas).filter(models.Kelas.kelas_id == kid).first()
+            if k:
+                db_soal.kelas_list.append(k)
+                
     db.commit()
     db.refresh(db_soal)
 
@@ -128,7 +136,8 @@ def get_all_soal(
             "judul_soal": s.judul_soal,
             "deskripsi_soal": s.deskripsi_soal,
             "tingkat_kesulitan": s.tingkat_kesulitan,
-            "testcases": testcases
+            "testcases": testcases,
+            "kelas_ids": [k.kelas_id for k in s.kelas_list]
         })
     return result
 
@@ -148,6 +157,13 @@ def update_soal(
     soal.judul_soal = payload.judul_soal
     soal.deskripsi_soal = payload.deskripsi_soal
     soal.tingkat_kesulitan = payload.tingkat_kesulitan
+    
+    soal.kelas_list.clear()
+    if payload.kelas_ids:
+        for kid in payload.kelas_ids:
+            k = db.query(models.Kelas).filter(models.Kelas.kelas_id == kid).first()
+            if k:
+                soal.kelas_list.append(k)
     
     # Hapus semua test case lama
     db.query(models.TestCase).filter(models.TestCase.soal_id == soal_id).delete()
@@ -208,8 +224,14 @@ def get_soal_siswa(
         models.User.role == 'dosen'
     ).subquery()
 
-    # Ambil soal yang dibuat oleh dosen-dosen tersebut
-    soal_list = db.query(models.Soal).filter(models.Soal.dosen_id.in_(dosen_instansi)).all()
+    # Ambil soal yang dibuat oleh dosen-dosen tersebut dan difilter berdasarkan kelas siswa (atau fallback tanpa kelas)
+    soal_list = db.query(models.Soal).filter(
+        models.Soal.dosen_id.in_(dosen_instansi),
+        or_(
+            models.Soal.kelas_list.any(models.Kelas.kelas_id == siswa.kelas_id),
+            ~models.Soal.kelas_list.any()
+        )
+    ).all()
 
     result = []
     for s in soal_list:
@@ -339,13 +361,19 @@ def get_bkt_stats(
     if not siswa:
         raise HTTPException(status_code=404, detail="Siswa tidak ditemukan")
 
-    # Ambil semua topik yang ada (ideal: ambil topik yang ada soalnya di instansi siswa)
+    # Ambil semua topik yang ada (ideal: ambil topik yang ada soalnya di instansi siswa dan sesuai kelas)
     dosen_instansi = db.query(models.User.user_id).filter(
         models.User.instansi_id == siswa.instansi_id,
         models.User.role == 'dosen'
     ).subquery()
     
-    soal_instansi = db.query(models.Soal.topik_id).filter(models.Soal.dosen_id.in_(dosen_instansi)).distinct().all()
+    soal_instansi = db.query(models.Soal.topik_id).filter(
+        models.Soal.dosen_id.in_(dosen_instansi),
+        or_(
+            models.Soal.kelas_list.any(models.Kelas.kelas_id == siswa.kelas_id),
+            ~models.Soal.kelas_list.any()
+        )
+    ).distinct().all()
     topik_ids = [s.topik_id for s in soal_instansi]
 
     result = []
@@ -387,9 +415,13 @@ def get_rekomendasi_topik(
         models.User.role == 'dosen'
     ).subquery()
 
-    # Ambil semua topik yang ada soalnya dari dosen instansi ini
+    # Ambil semua topik yang ada soalnya dari dosen instansi ini dan sesuai kelas siswa
     soal_instansi = db.query(models.Soal.topik_id).filter(
-        models.Soal.dosen_id.in_(dosen_instansi)
+        models.Soal.dosen_id.in_(dosen_instansi),
+        or_(
+            models.Soal.kelas_list.any(models.Kelas.kelas_id == siswa.kelas_id),
+            ~models.Soal.kelas_list.any()
+        )
     ).distinct().all()
     topik_ids = [s.topik_id for s in soal_instansi]
 
@@ -410,10 +442,14 @@ def get_rekomendasi_topik(
         if learned_prob >= 0.8:
             continue
 
-        # Ambil semua soal dari topik ini untuk analisis
+        # Ambil semua soal dari topik ini untuk analisis, dengan filter kelas
         soal_list = db.query(models.Soal).filter(
             models.Soal.topik_id == t_id,
-            models.Soal.dosen_id.in_(dosen_instansi)
+            models.Soal.dosen_id.in_(dosen_instansi),
+            or_(
+                models.Soal.kelas_list.any(models.Kelas.kelas_id == siswa.kelas_id),
+                ~models.Soal.kelas_list.any()
+            )
         ).all()
 
         # Cari soal yang belum diselesaikan dan tidak terkunci (Adaptive Routing)

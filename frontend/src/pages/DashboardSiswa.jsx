@@ -99,6 +99,15 @@ function DashboardSiswa() {
         <div style={{ flex: 1, padding: '30px', maxWidth: '1400px', margin: '0 auto', width: '100%' }} className="animate-fade-in">
 
           {/* ── Header Area ── */}
+          {!user?.kelas_id && (
+            <div style={{ padding: '16px', marginBottom: '20px', borderRadius: '4px', border: '2.5px solid #000000', backgroundColor: 'var(--danger-color)', color: '#000', fontWeight: '800', boxShadow: '3px 3px 0px #000000', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+              <div>
+                <div style={{ textTransform: 'uppercase', marginBottom: '2px' }}>Peringatan: Belum Terdaftar di Kelas</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>Anda belum ditugaskan ke kelas manapun. Beberapa soal mungkin tidak akan muncul sampai Anda masuk kelas. Silakan hubungi dosen Anda.</div>
+              </div>
+            </div>
+          )}
           <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
             <div>
               <h1 style={{ fontSize: '2.2rem', marginBottom: '4px', fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Beranda Siswa</h1>

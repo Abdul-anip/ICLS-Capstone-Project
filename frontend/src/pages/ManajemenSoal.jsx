@@ -133,12 +133,14 @@ function CustomSelect({ label, value, onChange, options, placeholder = 'Pilih op
 function ManajemenSoal() {
   const [soalList, setSoalList] = useState([]);
   const [topikList, setTopikList] = useState([]);
+  const [kelasOptions, setKelasOptions] = useState([]);
   
   // State form soal
   const [judul, setJudul] = useState('');
   const [soal, setSoal] = useState('');
   const [topikId, setTopikId] = useState('');
   const [kesulitan, setKesulitan] = useState('Mudah');
+  const [selectedKelas, setSelectedKelas] = useState([]);
   const [inputData, setInputData] = useState('');
   const [expectedOutput, setExpectedOutput] = useState('');
   
@@ -170,7 +172,19 @@ function ManajemenSoal() {
   useEffect(() => {
     fetchDaftarSoal();
     fetchTopikList();
+    fetchKelasList();
   }, []);
+
+  const fetchKelasList = async () => {
+    try {
+      if (user && user.instansi_id) {
+        const res = await apiClient.get(`/api/kelas/instansi?instansi_id=${user.instansi_id}`);
+        setKelasOptions(res.data);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil daftar kelas:', err);
+    }
+  };
 
   const fetchTopikList = async () => {
     try {
@@ -204,11 +218,19 @@ function ManajemenSoal() {
     resetForm();
   };
 
+  const handleKelasToggle = (kelasId) => {
+    setSelectedKelas(prev => {
+      if (prev.includes(kelasId)) return prev.filter(id => id !== kelasId);
+      return [...prev, kelasId];
+    });
+  };
+
   const resetForm = () => {
     setJudul('');
     setSoal('');
     setTopikId(topikList.length > 0 ? topikList[0].topik_id : '');
     setKesulitan('Mudah');
+    setSelectedKelas([]);
     setInputData('');
     setExpectedOutput('');
     setIsEditing(false);
@@ -226,6 +248,7 @@ function ManajemenSoal() {
       judul_soal: judul,
       deskripsi_soal: soal,
       tingkat_kesulitan: kesulitan,
+      kelas_ids: selectedKelas,
       testcases: [
         {
           input_data: inputData,
@@ -256,6 +279,7 @@ function ManajemenSoal() {
     setKesulitan(s.tingkat_kesulitan);
     setJudul(s.judul_soal || '');
     setSoal(s.deskripsi_soal);
+    setSelectedKelas(s.kelas_ids || []);
     
     if (s.testcases && s.testcases.length > 0) {
       setInputData(s.testcases[0].input_data || '');
@@ -552,7 +576,33 @@ function ManajemenSoal() {
                   />
                 </div>
 
-                <div className="input-group">
+                <div className="input-group" style={{ marginTop: '15px' }}>
+                  <label className="input-label">Tugaskan ke Kelas (Opsional, kosongkan untuk semua kelas)</label>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', gap: '8px',
+                    padding: '12px', backgroundColor: 'rgba(0,0,0,0.4)',
+                    border: '2px solid #000000', borderRadius: '4px',
+                    maxHeight: '150px', overflowY: 'auto'
+                  }}>
+                    {kelasOptions.length === 0 ? (
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Belum ada kelas di instansi ini.</span>
+                    ) : (
+                      kelasOptions.map(k => (
+                        <label key={k.kelas_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#FFF' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedKelas.includes(k.kelas_id)}
+                            onChange={() => handleKelasToggle(k.kelas_id)}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--accent-color)' }}
+                          />
+                          <span style={{ fontSize: '0.95rem' }}>{k.nama_kelas}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="input-group" style={{ marginTop: '15px' }}>
                   <label className="input-label">Judul Soal <span style={{ color: 'var(--danger-color)' }}>*</span></label>
                   <input 
                     className="input-field" 

@@ -38,6 +38,13 @@ dosen_kelas_association = Table(
     Column("kelas_id", Integer, ForeignKey("tb_kelas.kelas_id", ondelete="CASCADE"), primary_key=True)
 )
 
+soal_kelas_association = Table(
+    "tb_soal_kelas",
+    Base.metadata,
+    Column("soal_id", Integer, ForeignKey("tb_soal.soal_id", ondelete="CASCADE"), primary_key=True),
+    Column("kelas_id", Integer, ForeignKey("tb_kelas.kelas_id", ondelete="CASCADE"), primary_key=True)
+)
+
 
 class Kelas(Base):
     __tablename__ = "tb_kelas"
@@ -50,6 +57,7 @@ class Kelas(Base):
     instansi = relationship("Instansi", back_populates="kelas")
     siswa = relationship("User", back_populates="kelas")
     dosen_pengampu = relationship("User", secondary=dosen_kelas_association, back_populates="kelas_diampu")
+    soal_list = relationship("Soal", secondary=soal_kelas_association, back_populates="kelas_list")
 
 
 class User(Base):
@@ -103,6 +111,7 @@ class Soal(Base):
     pembuat = relationship("User", back_populates="soal_dibuat")
     testcases = relationship("TestCase", back_populates="soal", cascade="all, delete-orphan")
     evaluasi = relationship("Evaluasi", back_populates="soal")
+    kelas_list = relationship("Kelas", secondary=soal_kelas_association, back_populates="soal_list")
 
 
 class TestCase(Base):
