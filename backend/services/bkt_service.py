@@ -1,51 +1,90 @@
+"""
+BKT Service — ML-Driven Bayesian Knowledge Tracing
+====================================================
+Modul ini menghitung Knowledge State siswa menggunakan rumus Bayesian Knowledge Tracing
+dengan parameter yang dioptimasi oleh Machine Learning (dari ml_trainer.py).
+
+Alur:
+1. Saat server dimulai, parameter BKT dimuat dari file JSON hasil ML Training.
+2. Setiap kali siswa submit kode, fungsi calculate_new_state() dipanggil.
+3. Parameter Guess & Slip yang digunakan BUKAN lagi hardcoded, melainkan hasil
+   optimasi ML (Maximum Likelihood Estimation) dari data historis siswa sebelumnya.
+4. Jika ML belum pernah dijalankan, sistem menggunakan parameter default pakar (fallback).
+"""
+
 import datetime
 import math
+from services.ml_trainer import load_trained_params, DEFAULT_PARAMS
+
 
 class BKTModel:
-    def __init__(self, prior_prob: float = 0.1, guess_rate: float = 0.2, slip_rate: float = 0.1, transition_rate: float = 0.1):
-        self.prior_prob = prior_prob
-        self.guess_rate = guess_rate
-        self.slip_rate = slip_rate
-        self.transition_rate = transition_rate
-
+    def __init__(self):
+        """Inisialisasi model BKT dengan parameter dari hasil ML Training."""
+        self._params = None
+        self._reload_params()
+    
+    def _reload_params(self):
+        """Memuat ulang parameter dari file JSON hasil ML Training."""
+        self._params = load_trained_params()
+    
     def _get_params(self, tingkat_kesulitan: str = None):
-        """Mengembalikan parameter guess & slip sesuai tingkat kesulitan soal."""
-        if tingkat_kesulitan == "Mudah":
-            return 0.25, 0.05   # guess tinggi, slip rendah
-        elif tingkat_kesulitan == "Sedang":
-            return 0.15, 0.10   # keduanya moderat
-        elif tingkat_kesulitan == "Sulit":
-            return 0.05, 0.20   # guess sangat rendah, slip tinggi
-        return self.guess_rate, self.slip_rate
+        """
+        Mengembalikan parameter (guess, slip, learn, prior) sesuai tingkat kesulitan.
+        Parameter ini berasal dari hasil Machine Learning, bukan hardcoded.
+        """
+        # Pastikan params sudah dimuat
+        if self._params is None:
+            self._reload_params()
+        
+        # Ambil parameter untuk tingkat kesulitan yang diminta
+        difficulty_key = tingkat_kesulitan if tingkat_kesulitan in self._params else None
+        
+        if difficulty_key and isinstance(self._params[difficulty_key], dict):
+            p = self._params[difficulty_key]
+            guess = p.get("guess", 0.2)
+            slip  = p.get("slip", 0.1)
+            learn = p.get("learn", 0.15)
+            prior = p.get("prior", 0.1)
+            return guess, slip, learn, prior
+        
+        # Fallback ke parameter default jika tingkat kesulitan tidak ditemukan
+        return 0.2, 0.1, 0.15, 0.1
 
     def update_knowledge_state(self, current_prob: float, is_correct: bool, tingkat_kesulitan: str = None, num_soal: int = None) -> float:
         """
-        Menghitung Probabilitas Knowledge State yang baru P(Ln) menggunakan formula standar Bayesian Knowledge Tracing.
-        Parameter Guess dan Slip menyesuaikan dengan tingkat kesulitan soal secara dinamis.
-        is_correct = True (Observasi = 1, berhasil kompilasi dan sesuai test case)
-        is_correct = False (Observasi = 0, gagal)
+        Menghitung Probabilitas Knowledge State yang baru P(Ln) menggunakan 
+        formula Bayesian Knowledge Tracing dengan parameter dari Machine Learning.
+        
+        Parameters:
+            current_prob: Probabilitas penguasaan saat ini P(L_{n-1})
+            is_correct: True jika jawaban benar (Obs=1), False jika salah (Obs=0)
+            tingkat_kesulitan: "Mudah" / "Sedang" / "Sulit"
+            num_soal: Jumlah soal aktif di topik ini (untuk transition rate dinamis)
+            
+        Returns:
+            float: Probabilitas Knowledge State baru P(L_n)
         """
-        guess, slip = self._get_params(tingkat_kesulitan)
+        guess, slip, learn, _ = self._get_params(tingkat_kesulitan)
 
-        # Hitung transition_rate dinamis berdasarkan jumlah soal
-        transition = self.transition_rate
+        # Hitung transition_rate (learn rate) dinamis berdasarkan jumlah soal
+        transition = learn
         if num_soal is not None and num_soal > 0:
-            # Formula dinamis: P(T) = 0.6 / N, dibatasi min 0.05 dan max 0.45
-            transition = max(0.05, min(0.45, 0.6 / num_soal))
+            # Formula dinamis: P(T) = learn_rate * (3/N), dibatasi min 0.05 dan max 0.45
+            transition = max(0.05, min(0.45, learn * (3.0 / num_soal)))
 
         if is_correct:
-            # P(L_n | Obs=1)
+            # P(L_n | Obs=1) — Bayesian Update saat jawaban BENAR
             numerator = current_prob * (1 - slip)
             denominator = numerator + ((1 - current_prob) * guess)
         else:
-            # P(L_n | Obs=0)
+            # P(L_n | Obs=0) — Bayesian Update saat jawaban SALAH
             numerator = current_prob * slip
             denominator = numerator + ((1 - current_prob) * (1 - guess))
 
         # Posterior probability setelah observasi
         p_l_given_obs = numerator / denominator if denominator > 0 else 0
 
-        # Menghitung probabilitas penguasaan di waktu berikutnya (P(L_{n+1}))
+        # Menghitung probabilitas penguasaan di waktu berikutnya P(L_{n+1})
         new_knowledge_prob = p_l_given_obs + ((1 - p_l_given_obs) * transition)
 
         return round(new_knowledge_prob, 4)
@@ -53,7 +92,6 @@ class BKTModel:
     def predict_mastery_attempts(self, current_prob: float, tingkat_kesulitan: str = "Mudah", threshold: float = 0.8, num_soal: int = None) -> int:
         """
         Mensimulasikan berapa banyak submit BENAR yang dibutuhkan agar P(L) mencapai threshold (default 0.8).
-        Menggunakan tingkat kesulitan soal terbanyak di topik tersebut (default Mudah jika tidak diketahui).
         Maksimum simulasi: 50 langkah untuk menghindari infinite loop.
         """
         p = current_prob
@@ -64,41 +102,45 @@ class BKTModel:
             p = self.update_knowledge_state(p, is_correct=True, tingkat_kesulitan=tingkat_kesulitan, num_soal=num_soal)
             attempts += 1
 
-        # Jika tidak pernah konvergen (sangat jarang), kembalikan 50
         return attempts
 
     def get_recommendation_score(self, learned_prob: float) -> float:
         """
         Menghitung skor prioritas rekomendasi topik untuk siswa.
         Skor tinggi = topik ini paling mendesak untuk dikerjakan.
-        Formula: Topik dengan P(L) lebih rendah mendapat prioritas lebih tinggi.
-        Skor antara 0.0 – 1.0.
         """
-        # Normalisasi terbalik: semakin rendah P(L), semakin tinggi skor
-        # Topik yang belum pernah dikerjakan (P(L) = 0.1 default) juga mendapat skor tinggi
-        # Topik yang sudah dikuasai (P(L) >= 0.8) mendapat skor sangat rendah
         if learned_prob >= 0.8:
             return 0.0  # Sudah dikuasai, tidak perlu direkomendasikan
         return round(1.0 - learned_prob, 4)
 
+    def get_current_params_info(self) -> dict:
+        """Mengembalikan informasi parameter yang sedang digunakan (untuk debugging/API)."""
+        self._reload_params()
+        return self._params
 
-# Singleton instance dengan default values untuk contoh
+
+# Singleton instance
 bkt_engine = BKTModel()
 
 
 def calculate_new_state(current_prob: float, is_correct: bool, tingkat_kesulitan: str = None, num_soal: int = None) -> float:
-    """Wrapper function untuk diekspos ke controller dengan dukungan parameter kesulitan dan jumlah soal"""
+    """Wrapper function: Menghitung Knowledge State baru menggunakan parameter ML."""
     return bkt_engine.update_knowledge_state(current_prob, is_correct, tingkat_kesulitan, num_soal)
 
 
 def predict_mastery_attempts(current_prob: float, tingkat_kesulitan: str = "Mudah", num_soal: int = None) -> int:
-    """Wrapper: Prediksi berapa submit benar diperlukan untuk menguasai topik ini dengan transition_rate dinamis."""
+    """Wrapper: Prediksi berapa submit benar diperlukan untuk menguasai topik ini."""
     return bkt_engine.predict_mastery_attempts(current_prob, tingkat_kesulitan, num_soal=num_soal)
 
 
 def get_recommendation_score(learned_prob: float) -> float:
     """Wrapper: Hitung skor prioritas rekomendasi topik (0.0 – 1.0)."""
     return bkt_engine.get_recommendation_score(learned_prob)
+
+
+def reload_ml_params():
+    """Memuat ulang parameter ML dari file JSON (dipanggil setelah training selesai)."""
+    bkt_engine._reload_params()
 
 
 def apply_bkt_decay(bkt_record, db) -> float:

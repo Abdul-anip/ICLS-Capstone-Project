@@ -1,0 +1,31 @@
+{
+  "Mudah": {
+    "prior": 0.3711,
+    "learn": 0.01,
+    "guess": 0.5,
+    "slip": 0.1022
+  },
+  "Sedang": {
+    "prior": 0.01,
+    "learn": 0.3872,
+    "guess": 0.4166,
+    "slip": 0.01
+  },
+  "Sulit": {
+    "prior": 0.01,
+    "learn": 0.01,
+    "guess": 0.2006,
+    "slip": 0.5
+  },
+  "metadata": {
+    "source": "ml_optimized",
+    "trained_at": "2026-06-28T16:04:51.347951",
+    "total_data_points": 49,
+    "log_likelihood": -30.7569,
+    "sequences_count": {
+      "Mudah": 5,
+      "Sedang": 2,
+      "Sulit": 1
+    }
+  }
+}

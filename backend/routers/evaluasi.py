@@ -4,7 +4,8 @@ from database import get_db
 import models
 import schemas
 from services.jdoodle_service import evaluate_code
-from services.bkt_service import calculate_new_state, apply_bkt_decay
+from services.bkt_service import calculate_new_state, apply_bkt_decay, reload_ml_params
+from services.ml_trainer import train_from_database, load_trained_params
 from services.auth_service import get_current_user
 import datetime
 
@@ -255,3 +256,52 @@ def get_evaluasi_history(
         ))
         
     return result
+
+
+@router.post("/train-ml")
+def train_ml_model(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint Machine Learning: Melatih ulang parameter BKT dari seluruh data evaluasi.
+    Hanya dapat diakses oleh dosen atau super_admin.
+    
+    Proses:
+    1. Mengambil seluruh data dari tb_evaluasi + tb_soal.
+    2. Mengelompokkan berdasarkan tingkat kesulitan (Mudah/Sedang/Sulit).
+    3. Menjalankan algoritma optimasi MLE (scipy.optimize.minimize) untuk
+       mencari parameter BKT (Prior, Learn, Guess, Slip) yang optimal.
+    4. Menyimpan hasil ke file JSON dan memuat ulang ke memory server.
+    """
+    if current_user.role.value not in ['dosen', 'super_admin']:
+        raise HTTPException(status_code=403, detail="Hanya dosen atau admin yang dapat melatih model ML.")
+    
+    result = train_from_database(db)
+    
+    # Muat ulang parameter ke BKT engine yang sedang berjalan di memory
+    reload_ml_params()
+    
+    return {
+        "message": result["message"],
+        "status": result["status"],
+        "trained_params": result["params"]
+    }
+
+
+@router.get("/ml-params")
+def get_ml_params(
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Menampilkan parameter BKT yang sedang digunakan oleh sistem.
+    Berguna untuk debugging dan verifikasi bahwa ML Training telah berhasil.
+    """
+    if current_user.role.value not in ['dosen', 'super_admin']:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+    
+    params = load_trained_params()
+    return {
+        "current_params": params,
+        "source": params.get("metadata", {}).get("source", "unknown")
+    }
