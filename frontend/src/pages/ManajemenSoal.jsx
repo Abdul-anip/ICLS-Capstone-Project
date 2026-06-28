@@ -141,8 +141,7 @@ function ManajemenSoal() {
   const [topikId, setTopikId] = useState('');
   const [kesulitan, setKesulitan] = useState('Mudah');
   const [selectedKelas, setSelectedKelas] = useState([]);
-  const [inputData, setInputData] = useState('');
-  const [expectedOutput, setExpectedOutput] = useState('');
+  const [testCases, setTestCases] = useState([{ input_data: '', expected_output: '' }]);
   
   // State kontrol soal
   const [message, setMessage] = useState('');
@@ -231,8 +230,7 @@ function ManajemenSoal() {
     setTopikId(topikList.length > 0 ? topikList[0].topik_id : '');
     setKesulitan('Mudah');
     setSelectedKelas([]);
-    setInputData('');
-    setExpectedOutput('');
+    setTestCases([{ input_data: '', expected_output: '' }]);
     setIsEditing(false);
     setEditId(null);
     setMessage('');
@@ -249,12 +247,7 @@ function ManajemenSoal() {
       deskripsi_soal: soal,
       tingkat_kesulitan: kesulitan,
       kelas_ids: selectedKelas,
-      testcases: [
-        {
-          input_data: inputData,
-          expected_output: expectedOutput
-        }
-      ]
+      testcases: testCases
     };
 
     try {
@@ -282,14 +275,26 @@ function ManajemenSoal() {
     setSelectedKelas(s.kelas_ids || []);
     
     if (s.testcases && s.testcases.length > 0) {
-      setInputData(s.testcases[0].input_data || '');
-      setExpectedOutput(s.testcases[0].expected_output || '');
+      setTestCases(s.testcases);
     } else {
-      setInputData('');
-      setExpectedOutput('');
+      setTestCases([{ input_data: '', expected_output: '' }]);
     }
     
     setIsModalOpen(true);
+  };
+
+  const handleAddTestCase = () => {
+    setTestCases([...testCases, { input_data: '', expected_output: '' }]);
+  };
+
+  const handleRemoveTestCase = (index) => {
+    setTestCases(testCases.filter((_, i) => i !== index));
+  };
+
+  const handleTestCaseChange = (index, field, value) => {
+    const newTestCases = [...testCases];
+    newTestCases[index][field] = value;
+    setTestCases(newTestCases);
   };
 
   const handleDeleteClick = async (soal_id) => {
@@ -631,28 +636,43 @@ function ManajemenSoal() {
                   <h3 style={{ fontSize: '1rem', margin: 0, fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>Konfigurasi Test Case</h3>
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label">Input Data (Opsional)</label>
-                  <textarea 
-                    className="input-field" 
-                    rows="2" 
-                    value={inputData} 
-                    onChange={e => setInputData(e.target.value)} 
-                    placeholder="Data stdin untuk JDoodle... (Kosongkan jika tidak butuh input)"
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label">Expected Output (Wajib)</label>
-                  <textarea 
-                    className="input-field" 
-                    rows="2" 
-                    value={expectedOutput} 
-                    onChange={e => setExpectedOutput(e.target.value)} 
-                    placeholder="Output persis yang diharap dari layar terminal..."
-                    required
-                  />
-                </div>
+                {testCases.map((tc, index) => (
+                  <div key={index} style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', border: '1.5px solid #2a2a2a', borderRadius: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div style={{ fontWeight: '800', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--accent-color)' }}>Test Case #{index + 1}</div>
+                      {testCases.length > 1 && (
+                        <button type="button" onClick={() => handleRemoveTestCase(index)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem' }}>
+                          ✖ Hapus
+                        </button>
+                      )}
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Input Data (Opsional)</label>
+                      <textarea 
+                        className="input-field" 
+                        rows="2" 
+                        value={tc.input_data} 
+                        onChange={e => handleTestCaseChange(index, 'input_data', e.target.value)} 
+                        placeholder="Data stdin untuk JDoodle... (Kosongkan jika tidak butuh input)"
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Expected Output (Wajib)</label>
+                      <textarea 
+                        className="input-field" 
+                        rows="2" 
+                        value={tc.expected_output} 
+                        onChange={e => handleTestCaseChange(index, 'expected_output', e.target.value)} 
+                        placeholder="Output persis yang diharap dari layar terminal..."
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
+                
+                <button type="button" onClick={handleAddTestCase} className="btn" style={{ background: '#2a2a2a', color: 'var(--text-primary)', fontSize: '0.8rem', padding: '8px 16px', width: '100%', marginBottom: '10px' }}>
+                  ➕ Tambah Test Case Lainnya
+                </button>
 
                 <div style={{ display: 'flex', gap: '15px', marginTop: '30px' }}>
                   <button type="button" onClick={closeAddModal} className="btn btn-secondary" style={{ flex: 1 }}>
