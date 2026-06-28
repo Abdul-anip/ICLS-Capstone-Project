@@ -30,11 +30,18 @@ function DashboardDosen() {
   const [tempSelectedClasses, setTempSelectedClasses] = useState([]);
   const [isSavingClasses, setIsSavingClasses] = useState(false);
 
+  // ── State Machine Learning ──
+  const [mlParams, setMlParams] = useState(null);
+  const [isTrainingML, setIsTrainingML] = useState(false);
+  const [mlTrainResult, setMlTrainResult] = useState(null);
+  const [isLoadingMLParams, setIsLoadingMLParams] = useState(true);
+
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     fetchStats();
     fetchSiswaProgress();
     fetchClassesData();
+    fetchMLParams();
   }, []);
 
   const fetchClassesData = async () => {
@@ -121,6 +128,38 @@ function DashboardDosen() {
       console.error('Gagal mengambil progress siswa:', e);
     } finally {
       setIsLoadingSiswa(false);
+    }
+  };
+
+  // ── Fungsi Machine Learning ──
+  const fetchMLParams = async () => {
+    setIsLoadingMLParams(true);
+    try {
+      const res = await apiClient.get('/api/evaluasi/ml-params');
+      setMlParams(res.data);
+    } catch (e) {
+      console.error('Gagal mengambil parameter ML:', e);
+    } finally {
+      setIsLoadingMLParams(false);
+    }
+  };
+
+  const handleTrainML = async () => {
+    setIsTrainingML(true);
+    setMlTrainResult(null);
+    try {
+      const res = await apiClient.post('/api/evaluasi/train-ml');
+      setMlTrainResult({ success: true, data: res.data });
+      // Muat ulang parameter setelah training selesai
+      await fetchMLParams();
+    } catch (e) {
+      console.error('ML Training gagal:', e);
+      setMlTrainResult({ 
+        success: false, 
+        message: e.response?.data?.detail || 'Gagal melatih model. Pastikan ada data evaluasi siswa.' 
+      });
+    } finally {
+      setIsTrainingML(false);
     }
   };
 
@@ -243,6 +282,155 @@ function DashboardDosen() {
                   {isLoadingStats ? '—' : stats?.total_soal ?? 0}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>Soal aktif di bank soal</div>
+              </div>
+            </div>
+
+            {/* ── Panel Machine Learning ── */}
+            <div className="glass-panel" style={{ padding: '28px', marginBottom: '36px', borderLeft: '8px solid var(--accent-blue)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontFamily: 'Outfit', fontWeight: '800', textTransform: 'uppercase' }}>
+                      Machine Learning — BKT Parameter Optimizer
+                    </h2>
+                    {mlParams && (
+                      <span style={{
+                        padding: '3px 10px',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: '800',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        border: '2px solid #000',
+                        background: mlParams.source === 'ml_optimized' ? 'var(--success-color)' : 'var(--accent-color)',
+                        color: '#000'
+                      }}>
+                        {mlParams.source === 'ml_optimized' ? '✓ ML Optimized' : '◈ Heuristik Pakar'}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: '600', margin: 0 }}>
+                    Parameter Guess, Slip, Learn, dan Prior yang digunakan untuk menghitung Knowledge State siswa.
+                    Klik tombol di bawah untuk melatih ulang dari data evaluasi terbaru.
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabel Parameter */}
+              {isLoadingMLParams ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: '600' }}>Memuat parameter...</div>
+              ) : mlParams?.current_params ? (
+                <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2.5px solid #000' }}>
+                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '800', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tingkat Kesulitan</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Prior</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Learn</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Guess</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '800', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Slip</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['Mudah', 'Sedang', 'Sulit'].map((level, idx) => {
+                        const p = mlParams.current_params[level];
+                        if (!p) return null;
+                        const rowColors = ['var(--success-color)', 'var(--accent-color)', 'var(--danger-color)'];
+                        return (
+                          <tr key={level} style={{ borderBottom: '1px solid #2a2a2a' }}>
+                            <td style={{ padding: '12px 14px', fontWeight: '800', textTransform: 'uppercase' }}>
+                              <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: rowColors[idx], marginRight: '8px', border: '1.5px solid #000' }}></span>
+                              {level}
+                            </td>
+                            <td style={{ padding: '12px 14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '700', fontSize: '0.95rem' }}>{p.prior}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '700', fontSize: '0.95rem' }}>{p.learn}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '700', fontSize: '0.95rem' }}>{p.guess}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '700', fontSize: '0.95rem' }}>{p.slip}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Parameter belum tersedia.</div>
+              )}
+
+              {/* Metadata Training */}
+              {mlParams?.current_params?.metadata && mlParams.current_params.metadata.trained_at && (
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '20px', padding: '12px 16px', background: 'var(--bg-card-hover)', borderRadius: '4px', border: '1.5px solid #2a2a2a' }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Training Terakhir</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', marginTop: '2px' }}>
+                      {new Date(mlParams.current_params.metadata.trained_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Data Points</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', marginTop: '2px' }}>{mlParams.current_params.metadata.total_data_points} observasi</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Log-Likelihood</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', marginTop: '2px', fontFamily: 'monospace' }}>{mlParams.current_params.metadata.log_likelihood}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tombol Train + Notifikasi Hasil */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <button
+                  className="btn"
+                  onClick={handleTrainML}
+                  disabled={isTrainingML}
+                  style={{
+                    background: isTrainingML ? '#2a2a2a' : 'var(--accent-blue)',
+                    color: isTrainingML ? 'var(--text-secondary)' : '#000',
+                    cursor: isTrainingML ? 'not-allowed' : 'pointer',
+                    padding: '12px 28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {isTrainingML ? (
+                    <>
+                      <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2.5px solid var(--text-secondary)', borderTop: '2.5px solid var(--accent-blue)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></span>
+                      Melatih Model...
+                    </>
+                  ) : (
+                    'Latih Model AI'
+                  )}
+                </button>
+
+                {mlTrainResult && mlTrainResult.success && (
+                  <div style={{
+                    padding: '10px 18px',
+                    background: '#06D6A015',
+                    border: '2px solid var(--success-color)',
+                    borderRadius: '4px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    color: 'var(--success-color)',
+                    boxShadow: '2px 2px 0px #000'
+                  }}>
+                    ✓ {mlTrainResult.data?.message || 'Training selesai!'}
+                  </div>
+                )}
+
+                {mlTrainResult && !mlTrainResult.success && (
+                  <div style={{
+                    padding: '10px 18px',
+                    background: '#EF476F15',
+                    border: '2px solid var(--danger-color)',
+                    borderRadius: '4px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    color: 'var(--danger-color)',
+                    boxShadow: '2px 2px 0px #000'
+                  }}>
+                    ✗ {mlTrainResult.message}
+                  </div>
+                )}
               </div>
             </div>
 
