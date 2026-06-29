@@ -637,9 +637,20 @@ function ManajemenSoal() {
                 </div>
 
                 {testCases.map((tc, index) => (
-                  <div key={index} style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', border: '1.5px solid #2a2a2a', borderRadius: '4px' }}>
+                  <div key={index} style={{ marginBottom: '20px', padding: '16px', background: index === 0 ? 'rgba(0, 200, 100, 0.05)' : 'rgba(255, 100, 0, 0.05)', border: `1.5px solid ${index === 0 ? '#1a5c3a' : '#5c2a00'}`, borderRadius: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ fontWeight: '800', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--accent-color)' }}>Test Case #{index + 1}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ fontWeight: '800', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--accent-color)' }}>Test Case #{index + 1}</div>
+                        {index === 0 ? (
+                          <span style={{ background: 'var(--success-color)', color: '#000', fontSize: '0.6rem', fontWeight: '800', padding: '2px 8px', borderRadius: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            👁 Sample — Terlihat Siswa
+                          </span>
+                        ) : (
+                          <span style={{ background: 'var(--danger-color)', color: '#fff', fontSize: '0.6rem', fontWeight: '800', padding: '2px 8px', borderRadius: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            🔒 Hidden — Rahasia
+                          </span>
+                        )}
+                      </div>
                       {testCases.length > 1 && (
                         <button type="button" onClick={() => handleRemoveTestCase(index)} style={{ background: 'none', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem' }}>
                           ✖ Hapus
@@ -669,9 +680,13 @@ function ManajemenSoal() {
                     </div>
                   </div>
                 ))}
+
+                <div style={{ background: 'rgba(255,200,0,0.08)', border: '1.5px solid #5c4a00', borderRadius: '4px', padding: '10px 14px', marginBottom: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  💡 <strong>Test Case #1</strong> adalah <strong>Sample Case</strong> (siswa bisa melihatnya di deskripsi soal sebagai contoh). Test case berikutnya otomatis menjadi <strong>Hidden Case</strong> (digunakan untuk menilai logika kode siswa secara tersembunyi — mencegah kecurangan hardcoding).
+                </div>
                 
                 <button type="button" onClick={handleAddTestCase} className="btn" style={{ background: '#2a2a2a', color: 'var(--text-primary)', fontSize: '0.8rem', padding: '8px 16px', width: '100%', marginBottom: '10px' }}>
-                  ➕ Tambah Test Case Lainnya
+                  ➕ Tambah Test Case Lainnya (Hidden)
                 </button>
 
                 <div style={{ display: 'flex', gap: '15px', marginTop: '30px' }}>
