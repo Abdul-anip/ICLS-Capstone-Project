@@ -139,9 +139,13 @@ def submit_code(
                 passed_count += 1
             else:
                 is_correct = False
-                # Ambil output kegagalan testcase pertama sebagai contoh feedback
+                # Jika test case yang gagal adalah HIDDEN, jangan tampilkan expected output
+                # Hanya beri tahu nomor test case yang gagal
                 if not output_summary:
-                    output_summary = f"Wrong Answer pada Testcase {index + 1}.\nOutput Anda:\n{judge_result['output']}"
+                    if tc.is_hidden:
+                        output_summary = f"Wrong Answer pada Testcase {index + 1} (Hidden Case).\nOutput Anda:\n{judge_result['output']}\n[Expected output disembunyikan]"
+                    else:
+                        output_summary = f"Wrong Answer pada Testcase {index + 1} (Sample Case).\nOutput Anda:\n{judge_result['output']}"
         
         # Jika lolos kompilasi tapi ada yang salah, statusnya Wrong Answer
         if status_compile == "Accepted" and not is_correct:

@@ -47,12 +47,14 @@ def create_soal_with_testcase(
     db.refresh(db_soal)
 
     # Buat Test Case
-    for tc in payload.testcases:
+    # Test case pertama (index 0) = Sample Case (terlihat siswa sebagai contoh)
+    # Test case ke-2 dan seterusnya = Hidden Case (rahasia, hanya untuk penilaian)
+    for index, tc in enumerate(payload.testcases):
         db_testcase = models.TestCase(
             soal_id=db_soal.soal_id,
             input_data=tc.input_data,
             expected_output=tc.expected_output,
-            is_hidden=False
+            is_hidden=(index > 0)  # index 0 = False (Sample), index 1+ = True (Hidden)
         )
         db.add(db_testcase)
     
@@ -169,12 +171,14 @@ def update_soal(
     db.query(models.TestCase).filter(models.TestCase.soal_id == soal_id).delete()
     
     # Masukkan test case baru
-    for tc in payload.testcases:
+    # Test case pertama (index 0) = Sample Case (terlihat siswa sebagai contoh)
+    # Test case ke-2 dan seterusnya = Hidden Case (rahasia, hanya untuk penilaian)
+    for index, tc in enumerate(payload.testcases):
         db_testcase = models.TestCase(
             soal_id=soal_id,
             input_data=tc.input_data,
             expected_output=tc.expected_output,
-            is_hidden=False
+            is_hidden=(index > 0)  # index 0 = False (Sample), index 1+ = True (Hidden)
         )
         db.add(db_testcase)
         
