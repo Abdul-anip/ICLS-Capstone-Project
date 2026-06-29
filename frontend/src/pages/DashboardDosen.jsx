@@ -36,13 +36,25 @@ function DashboardDosen() {
   const [mlTrainResult, setMlTrainResult] = useState(null);
   const [isLoadingMLParams, setIsLoadingMLParams] = useState(true);
 
+  const [jdoodleCredit, setJdoodleCredit] = useState(null);
+
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     fetchStats();
     fetchSiswaProgress();
     fetchClassesData();
     fetchMLParams();
+    fetchJDoodleCredit();
   }, []);
+
+  const fetchJDoodleCredit = async () => {
+    try {
+      const res = await apiClient.get('/api/evaluasi/jdoodle-credit');
+      setJdoodleCredit(res.data);
+    } catch (e) {
+      console.error('Gagal mengambil JDoodle credit:', e);
+    }
+  };
 
   const fetchClassesData = async () => {
     try {
@@ -282,6 +294,17 @@ function DashboardDosen() {
                   {isLoadingStats ? '—' : stats?.total_soal ?? 0}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>Soal aktif di bank soal</div>
+              </div>
+
+              {/* JDoodle API Quota */}
+              <div className="glass-panel" style={{ padding: '24px', border: jdoodleCredit && jdoodleCredit.used >= (jdoodleCredit.total - 20) ? '2px solid var(--danger-color)' : '1.5px solid #000000' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '800' }}>
+                  Kuota API JDoodle
+                </div>
+                <div style={{ fontSize: '2.8rem', fontWeight: '800', color: jdoodleCredit && jdoodleCredit.used >= (jdoodleCredit.total - 20) ? 'var(--danger-color)' : 'var(--success-color)' }}>
+                  {!jdoodleCredit ? '—' : jdoodleCredit.used}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>Dari batas harian {!jdoodleCredit ? '200' : jdoodleCredit.total} submit</div>
               </div>
             </div>
 
