@@ -288,7 +288,7 @@ function WorkspaceSiswa() {
                             <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>Salah</span>
                           )}
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                            {new Date(att.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            Pukul {new Date(att.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
