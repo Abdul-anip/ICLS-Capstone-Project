@@ -305,3 +305,19 @@ def get_ml_params(
         "current_params": params,
         "source": params.get("metadata", {}).get("source", "unknown")
     }
+
+from services.jdoodle_service import check_credit
+
+@router.get("/jdoodle-credit")
+def get_jdoodle_credit(current_user: models.User = Depends(get_current_user)):
+    """
+    Mengambil sisa kuota (credit) JDoodle API yang sudah terpakai hari ini.
+    """
+    if current_user.role.value not in ['dosen', 'super_admin']:
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+        
+    result = check_credit()
+    if result.get("status") == "error":
+        raise HTTPException(status_code=500, detail=result.get("message", "Gagal mengecek kuota"))
+        
+    return {"used": result.get("used", 0), "total": result.get("total", 0)}
