@@ -149,12 +149,17 @@ function ManajemenSoal() {
   const [editId, setEditId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // State kontrol topik
+  // State untuk Modal Topik
   const [isTopikModalOpen, setIsTopikModalOpen] = useState(false);
   const [namaTopikBaru, setNamaTopikBaru] = useState('');
   const [deskripsiTopikBaru, setDeskripsiTopikBaru] = useState('');
   const [topikMessage, setTopikMessage] = useState('');
-  const [topikMessageType, setTopikMessageType] = useState('success'); // 'success' | 'error'
+  const [topikMessageType, setTopikMessageType] = useState('success');
+  
+  // State untuk Edit Topik
+  const [editingTopikId, setEditingTopikId] = useState(null);
+  const [editNamaTopik, setEditNamaTopik] = useState('');
+  const [editDeskripsiTopik, setEditDeskripsiTopik] = useState('');
   const [expandedTopics, setExpandedTopics] = useState({});
 
   const toggleTopic = (topikId) => {
@@ -322,6 +327,38 @@ function ManajemenSoal() {
     setNamaTopikBaru('');
     setDeskripsiTopikBaru('');
     setTopikMessage('');
+    setEditingTopikId(null);
+  };
+
+  const startEditTopik = (t) => {
+    setEditingTopikId(t.topik_id);
+    setEditNamaTopik(t.nama_topik);
+    setEditDeskripsiTopik(t.deskripsi || '');
+  };
+
+  const cancelEditTopik = () => {
+    setEditingTopikId(null);
+    setEditNamaTopik('');
+    setEditDeskripsiTopik('');
+  };
+
+  const handleUpdateTopik = async (e, topikId) => {
+    e.preventDefault();
+    if (!editNamaTopik.trim()) return;
+    try {
+      await apiClient.put(`/api/soal/topik/${topikId}`, {
+        nama_topik: editNamaTopik,
+        deskripsi: editDeskripsiTopik
+      });
+      setTopikMessage('Topik berhasil diperbarui!');
+      setTopikMessageType('success');
+      fetchTopikList();
+      setEditingTopikId(null);
+      setTimeout(() => setTopikMessage(''), 3000);
+    } catch (err) {
+      setTopikMessage(err.response?.data?.detail || 'Gagal memperbarui topik');
+      setTopikMessageType('error');
+    }
   };
 
   const handleTambahTopik = async (e) => {
@@ -341,7 +378,7 @@ function ManajemenSoal() {
       setTopikMessageType('success');
       setNamaTopikBaru('');
       setDeskripsiTopikBaru('');
-      fetchTopikList(); // Refresh dropdown di form soal juga
+      fetchTopikList();
     } catch (err) {
       const detail = err.response?.data?.detail || 'Gagal menambahkan topik.';
       setTopikMessage(detail);
@@ -349,12 +386,13 @@ function ManajemenSoal() {
     }
   };
 
-  const handleHapusTopik = async (topik_id, nama_topik) => {
-    if (!window.confirm(`Yakin ingin menghapus topik "${nama_topik}"?\n\nTopik hanya bisa dihapus jika tidak ada soal yang menggunakannya.`)) return;
+  const handleHapusTopik = async (topik_id) => {
+    const topik = topikList.find(t => t.topik_id === topik_id);
+    if (!window.confirm(`Yakin ingin menghapus topik "${topik?.nama_topik}"?\n\nTopik hanya bisa dihapus jika tidak ada soal yang menggunakannya.`)) return;
     
     try {
       await apiClient.delete(`/api/soal/topik/${topik_id}`);
-      setTopikMessage(`Topik "${nama_topik}" berhasil dihapus.`);
+      setTopikMessage(`Topik berhasil dihapus.`);
       setTopikMessageType('success');
       fetchTopikList();
     } catch (err) {
@@ -413,7 +451,6 @@ function ManajemenSoal() {
 
                   return (
                     <div key={t.topik_id} style={{ borderBottom: '2.5px solid #000000' }}>
-                      {/* Accordion Header */}
                       <div 
                         onClick={() => toggleTopic(t.topik_id)}
                         style={{
@@ -453,7 +490,6 @@ function ManajemenSoal() {
                         </div>
                       </div>
 
-                      {/* Accordion Content (List of Questions in Topic) */}
                       {isExpanded && (
                         <div style={{ background: '#0D0D11' }}>
                           {count === 0 ? (
@@ -791,35 +827,74 @@ function ManajemenSoal() {
                         onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-1px, -1px)'; e.currentTarget.style.boxShadow = '3px 3px 0px #000000'; }}
                         onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '2px 2px 0px #000000'; }}
                       >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                            <span className="brutal-badge brutal-badge-blue" style={{ fontSize: '0.75rem', padding: '2px 8px' }}>
-                              ID: {t.topik_id}
-                            </span>
-                            <span style={{ fontWeight: '800', fontSize: '0.95rem', color: '#ffffff' }}>{t.nama_topik}</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
-                            {t.deskripsi && (
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{t.deskripsi}</span>
-                            )}
-                            <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
-                              {soalCount} Soal
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleHapusTopik(t.topik_id, t.nama_topik)}
-                          title={soalCount > 0 ? `Tidak bisa dihapus (${soalCount} soal terkait)` : 'Hapus topik ini'}
-                          disabled={soalCount > 0}
-                          className="btn btn-danger"
-                          style={{ 
-                            padding: '6px 12px', fontSize: '0.75rem',
-                            opacity: soalCount > 0 ? 0.4 : 1,
-                            cursor: soalCount > 0 ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          Hapus
-                        </button>
+                        {editingTopikId === t.topik_id ? (
+                          <form onSubmit={(e) => handleUpdateTopik(e, t.topik_id)} style={{ width: '100%' }}>
+                            <div className="input-group" style={{ marginBottom: '8px' }}>
+                              <input 
+                                className="input-field" 
+                                type="text"
+                                value={editNamaTopik} 
+                                onChange={e => setEditNamaTopik(e.target.value)} 
+                                required
+                                style={{ padding: '8px' }}
+                              />
+                            </div>
+                            <div className="input-group" style={{ marginBottom: '12px' }}>
+                              <textarea 
+                                className="input-field" 
+                                rows="2" 
+                                value={editDeskripsiTopik} 
+                                onChange={e => setEditDeskripsiTopik(e.target.value)}
+                                style={{ padding: '8px' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <button type="submit" className="btn btn-success" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>Simpan</button>
+                              <button type="button" onClick={cancelEditTopik} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem' }}>Batal</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                                <span className="brutal-badge brutal-badge-blue" style={{ fontSize: '0.75rem', padding: '2px 8px' }}>
+                                  ID: {t.topik_id}
+                                </span>
+                                <span style={{ fontWeight: '800', fontSize: '0.95rem', color: '#ffffff' }}>{t.nama_topik}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                {t.deskripsi && (
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{t.deskripsi}</span>
+                                )}
+                                <span className="brutal-badge brutal-badge-yellow" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                                  {soalCount} Soal
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                onClick={() => startEditTopik(t)}
+                                className="btn btn-secondary"
+                                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleHapusTopik(t.topik_id)}
+                                title={soalCount > 0 ? `Tidak bisa dihapus (${soalCount} soal terkait)` : 'Hapus topik ini'}
+                                disabled={soalCount > 0}
+                                className="btn btn-danger"
+                                style={{ 
+                                  padding: '6px 12px', fontSize: '0.75rem',
+                                  opacity: soalCount > 0 ? 0.4 : 1,
+                                  cursor: soalCount > 0 ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })}

@@ -96,6 +96,29 @@ def create_topik(
     db.refresh(db_topik)
     return db_topik
 
+@router.put("/topik/{topik_id}", response_model=schemas.TopikMateriResponse)
+def update_topik(
+    topik_id: int,
+    payload: schemas.TopikMateriUpdate,
+    current_user: models.User = Depends(require_role("dosen", "super_admin")),
+    db: Session = Depends(get_db)
+):
+    topik = db.query(models.TopikMateri).filter(models.TopikMateri.topik_id == topik_id).first()
+    if not topik:
+        raise HTTPException(status_code=404, detail="Topik tidak ditemukan")
+        
+    # Cek duplikasi nama jika nama diubah
+    if topik.nama_topik != payload.nama_topik:
+        existing = db.query(models.TopikMateri).filter(models.TopikMateri.nama_topik == payload.nama_topik).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Topik dengan nama tersebut sudah ada")
+            
+    topik.nama_topik = payload.nama_topik
+    topik.deskripsi = payload.deskripsi
+    db.commit()
+    db.refresh(topik)
+    return topik
+
 @router.delete("/topik/{topik_id}")
 def delete_topik(
     topik_id: int,
