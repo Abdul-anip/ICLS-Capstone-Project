@@ -388,7 +388,9 @@ function DashboardSiswa() {
                               )}
                             </div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical' }}>
-                              {isLocked ? 'Selesaikan tingkat kesulitan sebelumnya pada topik ini untuk membuka soal.' : soal.deskripsi_soal}
+                              {isLocked 
+                                ? (soal.tingkat_kesulitan === 'Sedang' ? 'Selesaikan minimal 1 soal Mudah dan tingkatkan pemahaman Anda.' : 'Selesaikan minimal 1 soal Sedang dan tingkatkan pemahaman Anda.')
+                                : soal.deskripsi_soal}
                             </p>
                           </div>
 

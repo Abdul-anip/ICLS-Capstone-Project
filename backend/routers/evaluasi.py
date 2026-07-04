@@ -162,10 +162,17 @@ def submit_code(
     # 4. Logika BKT Dinamis Baru (Berdasarkan Transisi Hasil Submit Terakhir)
     last_result = last_eval.binary_result if last_eval else None
     current_result = 1 if is_correct else 0
+    is_partial = (current_score > 0 and current_score < 100)
     
     should_update_bkt = False
     
-    if last_result is None:
+    # Logika BKT 3-Zona:
+    # - Skor 100   -> Lanjutkan update seperti biasa (is_correct=True)
+    # - Skor 1-99  -> JANGAN update BKT (usaha parsial dihargai, tidak dihukum)
+    # - Skor 0     -> Lanjutkan update seperti biasa (is_correct=False)
+    if is_partial:
+        should_update_bkt = False  # Zona Parsial: BKT stagnan
+    elif last_result is None:
         # Pengerjaan pertama kali (selalu update BKT)
         should_update_bkt = True
     elif last_result == 0 and current_result == 1:

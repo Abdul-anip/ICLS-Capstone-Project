@@ -258,14 +258,27 @@ def get_soal_siswa(
             models.Evaluasi.binary_result == 1
         ).first() is not None
 
-        # Cek status lock/unlock sesuai aturan adaptif:
-        # Mudah: Selalu terbuka (is_locked = False)
-        # Sedang: Terbuka jika learned_prob >= 0.4
-        # Sulit: Terbuka jika learned_prob >= 0.8
+        # Query: Berapa soal Mudah yang sudah diselesaikan siswa di topik ini?
+        solved_mudah = db.query(models.Evaluasi).join(models.Soal).filter(
+            models.Evaluasi.siswa_id == user_id,
+            models.Soal.topik_id == s.topik_id,
+            models.Soal.tingkat_kesulitan == "Mudah",
+            models.Evaluasi.binary_result == 1
+        ).distinct(models.Evaluasi.soal_id).count()
+
+        # Query: Berapa soal Sedang yang sudah diselesaikan siswa di topik ini?
+        solved_sedang = db.query(models.Evaluasi).join(models.Soal).filter(
+            models.Evaluasi.siswa_id == user_id,
+            models.Soal.topik_id == s.topik_id,
+            models.Soal.tingkat_kesulitan == "Sedang",
+            models.Evaluasi.binary_result == 1
+        ).distinct(models.Evaluasi.soal_id).count()
+
+        # Syarat ganda: P(L) harus memenuhi threshold DAN harus punya pengalaman di level sebelumnya
         is_locked = False
-        if s.tingkat_kesulitan == "Sedang" and learned_prob < 0.4:
+        if s.tingkat_kesulitan == "Sedang" and (learned_prob < 0.4 or solved_mudah < 1):
             is_locked = True
-        elif s.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
+        elif s.tingkat_kesulitan == "Sulit" and (learned_prob < 0.8 or solved_sedang < 1):
             is_locked = True
             
         # Ambil skor tertinggi (Best Score) untuk soal ini
