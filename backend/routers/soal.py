@@ -4,7 +4,7 @@ from sqlalchemy import or_
 from database import get_db
 import models
 import schemas
-from services.bkt_service import predict_mastery_attempts, get_recommendation_score
+from services.bkt_service import predict_mastery_attempts, get_recommendation_score, apply_bkt_decay
 from services.auth_service import get_current_user, require_role
 
 router = APIRouter(
@@ -249,7 +249,8 @@ def get_soal_siswa(
             models.BKTHistory.topik_id == s.topik_id
         ).first()
         
-        learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+        # Terapkan BKT Decay (peluruhan) jika siswa tidak aktif
+        learned_prob = apply_bkt_decay(bkt_record, db) if bkt_record else 0.1
 
         # Cek apakah pernah diselesaikan dengan benar (binary_result = 1)
         solved = db.query(models.Evaluasi).filter(
@@ -329,13 +330,29 @@ def get_soal_siswa_single(
         models.BKTHistory.siswa_id == user_id,
         models.BKTHistory.topik_id == soal.topik_id
     ).first()
-    learned_prob = bkt_record.learned_prob if bkt_record else 0.1
+    learned_prob = apply_bkt_decay(bkt_record, db) if bkt_record else 0.1
     
     # Validasi status lock/unlock untuk adaptif kognitif (bypass URL check)
+    # Query: Berapa soal Mudah yang sudah diselesaikan siswa di topik ini?
+    solved_mudah = db.query(models.Evaluasi).join(models.Soal).filter(
+        models.Evaluasi.siswa_id == user_id,
+        models.Soal.topik_id == soal.topik_id,
+        models.Soal.tingkat_kesulitan == "Mudah",
+        models.Evaluasi.binary_result == 1
+    ).distinct(models.Evaluasi.soal_id).count()
+
+    # Query: Berapa soal Sedang yang sudah diselesaikan siswa di topik ini?
+    solved_sedang = db.query(models.Evaluasi).join(models.Soal).filter(
+        models.Evaluasi.siswa_id == user_id,
+        models.Soal.topik_id == soal.topik_id,
+        models.Soal.tingkat_kesulitan == "Sedang",
+        models.Evaluasi.binary_result == 1
+    ).distinct(models.Evaluasi.soal_id).count()
+
     is_locked = False
-    if soal.tingkat_kesulitan == "Sedang" and learned_prob < 0.4:
+    if soal.tingkat_kesulitan == "Sedang" and (learned_prob < 0.4 or solved_mudah < 1):
         is_locked = True
-    elif soal.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
+    elif soal.tingkat_kesulitan == "Sulit" and (learned_prob < 0.8 or solved_sedang < 1):
         is_locked = True
         
     if is_locked:
