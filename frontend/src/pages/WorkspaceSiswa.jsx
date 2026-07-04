@@ -111,7 +111,7 @@ function WorkspaceSiswa() {
         language_id: activeLang
       });
 
-      const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate, passed_testcases, total_testcases } = response.data;
+      const { status_compile, is_correct, output: apiOutput, new_knowledge_state, is_duplicate, passed_testcases, total_testcases, score } = response.data;
 
       let outText = '';
 
@@ -122,12 +122,14 @@ function WorkspaceSiswa() {
         outText += `Ubah kode Anda untuk mendapatkan penilaian baru.\n\n`;
         outText += `Hasil submit sebelumnya:\n`;
         outText += `Status: ${status_compile}\n`;
-        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus`;
+        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus\n`;
+        outText += `Skor: ${score} / 100`;
       } else {
         outText = `[SUBMIT FINAL]\n`;
         outText += `─────────────────────────────────────────────\n`;
         outText += `Status: ${status_compile}\n`;
-        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus\n\n`;
+        outText += `Test Case: ${passed_testcases} / ${total_testcases} Lulus\n`;
+        outText += `Skor: ${score} / 100\n\n`;
         outText += `Detail Feedback:\n${apiOutput || '(Tidak ada feedback)'}`;
 
         // Tambahkan ke riwayat lokal jika bukan duplikat
@@ -135,6 +137,7 @@ function WorkspaceSiswa() {
           evaluasi_id: Date.now(),
           status_compile: status_compile,
           binary_result: is_correct ? 1 : 0,
+          score: score,
           timestamp: new Date().toISOString(),
           source_code: code
         };
@@ -283,9 +286,11 @@ function WorkspaceSiswa() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                           {att.binary_result === 1 ? (
-                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>Benar</span>
+                            <span className="brutal-badge brutal-badge-success" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>Benar (100)</span>
                           ) : (
-                            <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>Salah</span>
+                            <span className="brutal-badge brutal-badge-danger" style={{ fontSize: '0.55rem', padding: '1px 5px' }}>
+                              {att.score > 0 ? `Parsial (${att.score})` : 'Salah (0)'}
+                            </span>
                           )}
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
                             Pukul {new Date(att.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}

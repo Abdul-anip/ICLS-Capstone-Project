@@ -136,6 +136,7 @@ class Evaluasi(Base):
     source_code = Column(Text)
     status_compile = Column(String(50))
     binary_result = Column(Integer)  # 1 untuk benar, 0 untuk salah
+    score = Column(Float, default=0.0) # Skor 0-100 berdasarkan rasio test case
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relasi

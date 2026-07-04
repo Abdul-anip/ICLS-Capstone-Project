@@ -89,6 +89,7 @@ def submit_code(
     if is_duplicate:
         # Kembalikan hasil submit sebelumnya TANPA menjalankan ulang Judge0
         # dan TANPA mengupdate state BKT — mencegah exploit P(L)
+        last_score = last_eval.score if last_eval.score is not None else (100.0 if last_eval.binary_result == 1 else 0.0)
         return schemas.CodeEvaluationResponse(
             status_compile=last_eval.status_compile,
             is_correct=bool(last_eval.binary_result),
@@ -96,7 +97,8 @@ def submit_code(
             new_knowledge_state=current_prob,
             is_duplicate=True,
             passed_testcases=len(testcases) if last_eval.binary_result else 0,
-            total_testcases=len(testcases)
+            total_testcases=len(testcases),
+            score=last_score
         )
     # ─────────────────────────────────────────────────────────────────────────
 
@@ -153,6 +155,9 @@ def submit_code(
             
         if is_correct:
             output_summary = "Seluruh testcase berhasil dilewati dengan sukses!"
+
+    # Hitung skor berdasarkan rasio test case yang lolos
+    current_score = round((passed_count / total_testcases) * 100, 1) if total_testcases > 0 else 0.0
 
     # 4. Logika BKT Dinamis Baru (Berdasarkan Transisi Hasil Submit Terakhir)
     last_result = last_eval.binary_result if last_eval else None
@@ -211,7 +216,8 @@ def submit_code(
         soal_id=submission.soal_id,
         source_code=submission.source_code,
         status_compile=status_compile,
-        binary_result=current_result
+        binary_result=current_result,
+        score=current_score
     )
     db.add(eval_log)
     
@@ -226,7 +232,8 @@ def submit_code(
         new_knowledge_state=current_prob,
         is_duplicate=False,
         passed_testcases=passed_count,
-        total_testcases=total_testcases
+        total_testcases=total_testcases,
+        score=current_score
     )
 
 
@@ -256,6 +263,7 @@ def get_evaluasi_history(
             deskripsi_soal=(soal.judul_soal if soal.judul_soal else (soal.deskripsi_soal[:50] + "...")) if soal else "Unknown",
             status_compile=r.status_compile,
             binary_result=r.binary_result,
+            score=r.score if r.score is not None else (100.0 if r.binary_result == 1 else 0.0),
             timestamp=r.timestamp
         ))
         

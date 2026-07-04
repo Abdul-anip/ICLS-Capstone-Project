@@ -417,6 +417,18 @@ function DashboardSiswa() {
                               </span>
                             )}
 
+                            {/* Best Score Badge */}
+                            {!isLocked && (
+                              <span style={{
+                                fontSize: '0.7rem',
+                                color: soal.best_score === 100 ? '#000' : (soal.best_score >= 50 ? '#000' : '#FFF'),
+                                fontWeight: '800', border: '1.5px solid #000000', padding: '2px 8px', borderRadius: '2px', 
+                                background: soal.best_score === 100 ? 'var(--success-color)' : (soal.best_score >= 50 ? 'var(--yellow-color)' : (soal.best_score > 0 ? 'var(--danger-color)' : 'rgba(255,255,255,0.1)'))
+                              }}>
+                                ★ SKOR: {soal.best_score || 0}
+                              </span>
+                            )}
+
                             {/* Button */}
                             <button
                               className={`btn ${isLocked || soal.is_solved ? 'btn-secondary' : 'btn-primary'}`}

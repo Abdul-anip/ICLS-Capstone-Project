@@ -181,6 +181,7 @@ class CodeEvaluationResponse(BaseModel):
     is_duplicate: bool = False
     passed_testcases: Optional[int] = None
     total_testcases: Optional[int] = None
+    score: float = 0.0
 
 class BKTStatsResponse(BaseModel):
     topik_id: int
@@ -193,6 +194,7 @@ class EvaluasiHistoryResponse(BaseModel):
     deskripsi_soal: str
     status_compile: str
     binary_result: int
+    score: float = 0.0
     timestamp: datetime
 
 

@@ -267,6 +267,13 @@ def get_soal_siswa(
             is_locked = True
         elif s.tingkat_kesulitan == "Sulit" and learned_prob < 0.8:
             is_locked = True
+            
+        # Ambil skor tertinggi (Best Score) untuk soal ini
+        best_eval = db.query(models.Evaluasi).filter(
+            models.Evaluasi.siswa_id == user_id,
+            models.Evaluasi.soal_id == s.soal_id
+        ).order_by(models.Evaluasi.score.desc()).first()
+        best_score = best_eval.score if best_eval and best_eval.score is not None else (100.0 if solved else 0.0)
 
         result.append({
             "soal_id": s.soal_id,
@@ -277,7 +284,8 @@ def get_soal_siswa(
             "tingkat_kesulitan": s.tingkat_kesulitan,
             "learned_prob": learned_prob,
             "is_solved": solved,
-            "is_locked": is_locked
+            "is_locked": is_locked,
+            "best_score": best_score
         })
         
     return result
